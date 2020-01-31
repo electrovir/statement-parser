@@ -1,0 +1,7 @@
+.prettierrc.json
+dist/test
+src
+downloads
+test
+.vscode
+tsconfig.json

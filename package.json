@@ -1,0 +1,52 @@
+{
+    "name": "statement-parser",
+    "version": "1.0.0",
+    "description": "Parse bank and credit card statements.",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/electrovir/statement-parser"
+    },
+    "bugs": {
+        "url": "https://github.com/electrovir/statement-parser/issues"
+    },
+    "homepage": "https://github.com/electrovir/statement-parser",
+    "author": {
+        "name": "electrovir"
+    },
+    "keywords": [
+        "pdf",
+        "bank",
+        "credit card",
+        "finances",
+        "financial",
+        "pdf to json",
+        "citi",
+        "chase",
+        "usaa",
+        "parser",
+        "statement",
+        "statements"
+    ],
+    "bin": {
+        "s-parse": "dist/src/cli.js"
+    },
+    "main": "dist/src/index.js",
+    "scripts": {
+        "compile": "rm -rf dist && tsc && chmod +x dist/src/cli.js",
+        "format": "prettier --write './{,!(dist)/**/}*.+(ts|json|html)'",
+        "postinstall": "echo 'statement-parser: You can SAFELY IGNORE the peer-dependency warnings below for pdfjs-dist and worker-loading.\n';",
+        "prepublishOnly": "npm upgrade && npm install && npm run compile",
+        "test": "npm run compile; node dist/test/test.js"
+    },
+    "typings": "dist/src/index.d.ts",
+    "dependencies": {
+        "pdf-text-reader": "^1.2.0",
+        "pdfjs-dist": "^2.2.228",
+        "typescript": "^3.7.5"
+    },
+    "devDependencies": {
+        "@types/node": "^12.12.26",
+        "@types/pdfjs-dist": "^2.1.3"
+    }
+}
