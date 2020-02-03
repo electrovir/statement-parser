@@ -1,6 +1,6 @@
 {
     "name": "statement-parser",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Parse bank and credit card statements.",
     "license": "MIT",
     "repository": {
@@ -35,7 +35,7 @@
     "scripts": {
         "compile": "rm -rf dist && tsc && chmod +x dist/src/cli.js",
         "format": "prettier --write './{,!(dist)/**/}*.+(ts|json|html)'",
-        "postinstall": "echo 'statement-parser: You can SAFELY IGNORE the peer-dependency warnings below for pdfjs-dist and worker-loading.\n';",
+        "postinstall": "echo 'statement-parser: You can SAFELY IGNORE the peer-dependency warnings below for pdfjs-dist and worker-loader.\n';",
         "prepublishOnly": "npm upgrade && npm install && npm run compile",
         "test": "npm run compile; node dist/test/test.js"
     },
