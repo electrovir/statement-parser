@@ -8,17 +8,19 @@ enum State {
     END = 'end',
 }
 
-const initOutput: ParsedOutput = {
-    expenses: [],
-    incomes: [],
-    accountSuffix: 'EXAMPLE',
-    startDate: new Date(),
-};
 /**
  * @param yearPrefix       The first two digits of the current year.
  *                         Example: for the year 2010, use 20. For 1991, use 19.
  **/
 export const exampleParser: PdfParse<ParsedOutput> = async (filePath: string, yearPrefix: number) => {
+    const initOutput: ParsedOutput = {
+        expenses: [],
+        incomes: [],
+        filePath,
+        accountSuffix: 'EXAMPLE',
+        startDate: new Date(),
+    };
+
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
     const parser = createParserStateMachine<State, string, ParsedOutput>(

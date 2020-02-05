@@ -11,6 +11,7 @@ enum State {
     CREDIT_HEADER = 'credit-header',
     CREDIT = 'credit',
     CREDIT_FILLER = 'credit-filler',
+    CREDIT_STARTED_FILLER = 'credit-started-filler',
     END = 'end',
 }
 
@@ -21,18 +22,18 @@ export type UsaaCreditCardTransaction = ParsedTransaction & {
 
 export type UsaaCreditOutput = ParsedOutput<UsaaCreditCardTransaction>;
 
-const initOutput: UsaaCreditOutput = {
-    incomes: [],
-    expenses: [],
-
-    accountSuffix: '',
-    endDate: undefined,
-};
 /**
  * @param yearPrefix       The first two digits of the current year.
  *                         Example: for the year 2010, use 20. For 1991, use 19.
  **/
 export const usaaCreditCardParse: PdfParse<UsaaCreditOutput> = async (filePath: string, yearPrefix: number) => {
+    const initOutput: UsaaCreditOutput = {
+        incomes: [],
+        expenses: [],
+        filePath,
+        accountSuffix: '',
+        endDate: undefined,
+    };
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
     const parser = createParserStateMachine<State, string, UsaaCreditOutput>(
@@ -67,7 +68,7 @@ function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTran
 }
 
 const tableHeadersRegex = /^trans date\s*post date/i;
-const creditsEndRegex = /(?:^\s*total transactions for)|(?:^$)/i;
+const creditsEndRegex = /(?:^\s*total transactions for)/i;
 const paymentsEndRegex = /(?:^total payments and credits for this period\s+\$)|(?:^$)/i;
 
 function performStateAction(currentState: State, line: string, yearPrefix: number, output: UsaaCreditOutput) {
@@ -134,10 +135,13 @@ function nextState(currentState: State, line: string): State {
         case State.CREDIT_FILLER:
             if (line === 'transactions') {
                 return State.CREDIT_HEADER;
-            } else if (line === 'transactions (continued)') {
-                return State.CREDIT;
             } else if (line.match(/^\s*fees\s*$/)) {
                 return State.END;
+            }
+            break;
+        case State.CREDIT_STARTED_FILLER:
+            if (line === 'transactions (continued)') {
+                return State.CREDIT;
             }
             break;
         case State.CREDIT_HEADER:
@@ -148,6 +152,8 @@ function nextState(currentState: State, line: string): State {
         case State.CREDIT:
             if (line.match(creditsEndRegex)) {
                 return State.CREDIT_FILLER;
+            } else if (line === '') {
+                return State.CREDIT_STARTED_FILLER;
             }
         case State.END:
             break;

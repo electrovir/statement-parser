@@ -32,6 +32,7 @@ export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
     incomes: T[];
     expenses: T[];
     accountSuffix: string;
+    filePath: string;
     startDate?: Date;
     endDate?: Date;
 };
@@ -70,7 +71,10 @@ export function createParserStateMachine<StateType, ValueType, OutputType extend
             const nextInput = iterator.next();
 
             if (nextInput.done) {
-                console.warn('Reached end of input before hitting end state.');
+                if (DEBUG) {
+                    console.warn(output);
+                }
+                console.warn(`Reached end of input before hitting end state on ${output.filePath}`);
                 break;
             }
 
@@ -79,13 +83,22 @@ export function createParserStateMachine<StateType, ValueType, OutputType extend
             if (DEBUG) {
                 console.log(`state: "${state}", input: "${input}"`);
             }
-
-            output = action(state, input, yearPrefix, output);
-            state = next(state, input);
+            try {
+                output = action(state, input, yearPrefix, output);
+                state = next(state, input);
+            } catch (error) {
+                error.message += ` in file: ${output.filePath}`;
+                throw error;
+            }
         }
 
         if (!output.accountSuffix) {
-            throw new Error(`Parse completed without filling in account suffix`);
+            const message = `Parse completed without filling in account suffix on ${output.filePath}`;
+            if (DEBUG) {
+                console.error(output);
+            }
+            console.error(message);
+            throw new Error(message);
         }
 
         return output;

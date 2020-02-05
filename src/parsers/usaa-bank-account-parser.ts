@@ -21,19 +21,20 @@ export type UsaaBankAccountTransaction = ParsedTransaction & {
 
 export type UsaaBankOutput = ParsedOutput<UsaaBankAccountTransaction>;
 
-const initOutput: UsaaBankOutput = {
-    incomes: [],
-    expenses: [],
-
-    accountSuffix: '',
-    startDate: undefined,
-    endDate: undefined,
-};
 /**
  * @param yearPrefix       The first two digits of the current year.
  *                         Example: for the year 2010, use 20. For 1991, use 19.
  **/
 export const usaaBankAccountParse: PdfParse<UsaaBankOutput> = async (filePath: string, yearPrefix: number) => {
+    const initOutput: UsaaBankOutput = {
+        incomes: [],
+        expenses: [],
+        filePath,
+        accountSuffix: '',
+        startDate: undefined,
+        endDate: undefined,
+    };
+
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
     const parser = createParserStateMachine<State, string, UsaaBankOutput>(

@@ -4,6 +4,7 @@ import {chaseCreditCardParse} from './parsers/chase-credit-card-parser';
 import {citiCostcoCreditCardParse} from './parsers/citi-costco-credit-card-parser';
 import {usaaCreditCardParse} from './parsers/usaa-credit-card-parser';
 import {getEnumTypedValues} from './util/object';
+import {setDebug} from './config';
 
 export {ParsedTransaction, ParsedOutput} from './parsers/base-parser';
 export {UsaaBankAccountTransaction, UsaaBankOutput} from './parsers/usaa-bank-account-parser';
@@ -49,7 +50,10 @@ export type ParsedPdf = StatementPdf & {
     data: ParsedOutput;
 };
 
-export async function parsePdfs(pdfs: StatementPdf[]): Promise<ParsedPdf[]> {
+export async function parsePdfs(pdfs: StatementPdf[], debug = false): Promise<ParsedPdf[]> {
+    if (debug) {
+        setDebug(true);
+    }
     const parsedPdfs: ParsedPdf[] = await Promise.all(
         pdfs.map(async pdf => {
             return {

@@ -22,14 +22,6 @@ type CitiCostcoCreditIntermediateTransaction = Overwrite<
     }
 >;
 
-const initOutput: ParsedOutput = {
-    incomes: [],
-    expenses: [],
-    accountSuffix: '',
-    startDate: undefined,
-    endDate: undefined,
-};
-
 async function readCitiCostcoPdf(path: string): Promise<string[]> {
     const doc = await getPdfDocument(path);
     const pageCount = doc.numPages;
@@ -68,6 +60,14 @@ async function readCitiCostcoPdf(path: string): Promise<string[]> {
  *                         Example: for the year 2010, use 20. For 1991, use 19.
  **/
 export const citiCostcoCreditCardParse: PdfParse<ParsedOutput> = async (filePath: string, yearPrefix: number) => {
+    const initOutput: ParsedOutput = {
+        incomes: [],
+        expenses: [],
+        accountSuffix: '',
+        filePath,
+        startDate: undefined,
+        endDate: undefined,
+    };
     const lines: string[] = await readCitiCostcoPdf(filePath);
 
     if (DEBUG) {
@@ -158,7 +158,7 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
             const [, startDateString, endDateString] = billingPeriodMatch;
             output.startDate = dateFromSlashFormat(startDateString, yearPrefix);
             output.endDate = dateFromSlashFormat(endDateString, yearPrefix);
-        } else if (accountEndingMatch && !accountEndingMatch) {
+        } else if (accountEndingMatch) {
             output.accountSuffix = accountEndingMatch[1];
         }
     } else if (line !== '' && (currentState === State.PURCHASE || currentState === State.PAYMENT)) {
