@@ -96,6 +96,8 @@ function nextState(currentState: State, line: string): State {
         case State.HEADER:
             if (line === 'payments and other credits') {
                 return State.PAYMENT;
+            } else if (line === 'purchase') {
+                return State.PURCHASE;
             }
             break;
         case State.PAYMENT:

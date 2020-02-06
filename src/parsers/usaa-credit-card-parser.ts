@@ -49,8 +49,10 @@ export const usaaCreditCardParse: PdfParse<UsaaCreditOutput> = async (filePath: 
     return output;
 };
 
+const transactionRegex = /^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
+
 function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTransaction | string {
-    const match = line.match(/^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/);
+    const match = line.match(transactionRegex);
     if (match) {
         const [, transactionDate, postDate, referenceNumber, description, amount] = match;
         const [transactionMonth, transactionDay] = transactionDate.split('/');
@@ -74,12 +76,16 @@ const paymentsEndRegex = /(?:^total payments and credits for this period\s+\$)|(
 function performStateAction(currentState: State, line: string, yearPrefix: number, output: UsaaCreditOutput) {
     if (
         (currentState === State.CREDIT && !line.match(creditsEndRegex)) ||
-        (currentState === State.PAYMENT && !line.match(paymentsEndRegex))
+        (currentState === State.PAYMENT && !line.match(paymentsEndRegex)) ||
+        // read expenses if in this state and the line matches a transaction
+        (currentState === State.CREDIT_STARTED_FILLER && line.match(transactionRegex))
     ) {
         if (!output.endDate) {
             throw new Error('Started reading transactions but got no statement close date.');
         }
-        const array = currentState === State.CREDIT ? output.expenses : output.incomes;
+        // Critical ternary here that sets the array to expenses even if the above State.CREDIT_STARTED_FILLER condition
+        // is true
+        const array = currentState === State.PAYMENT ? output.incomes : output.expenses;
 
         const result = processTransactionLine(line, output.endDate);
 
@@ -140,7 +146,7 @@ function nextState(currentState: State, line: string): State {
             }
             break;
         case State.CREDIT_STARTED_FILLER:
-            if (line === 'transactions (continued)') {
+            if (line === 'transactions (continued)' || line.match(transactionRegex)) {
                 return State.CREDIT;
             }
             break;

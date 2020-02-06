@@ -72,10 +72,9 @@ export function createParserStateMachine<StateType, ValueType, OutputType extend
 
             if (nextInput.done) {
                 if (DEBUG) {
-                    console.warn(output);
+                    console.error(output);
                 }
-                console.warn(`Reached end of input before hitting end state on ${output.filePath}`);
-                break;
+                throw new Error(`Reached end of input before hitting end state on ${output.filePath}`);
             }
 
             const input: ValueType = nextInput.value;
