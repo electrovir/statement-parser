@@ -126,7 +126,7 @@ function parseTransactionLine(
             `Tried to parse a transaction but no start date (${output.startDate}) or end date (${output.endDate}) were found yet`,
         );
     }
-    const transactionMatch = line.match(/(\d{2})\/(\d{2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i);
+    const transactionMatch = line.match(/(?:\d{2}\/\d{2}\s*)?(\d{2})\/(\d{2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i);
 
     if (transactionMatch) {
         const [, monthString, dayString, description, amountString] = transactionMatch;
