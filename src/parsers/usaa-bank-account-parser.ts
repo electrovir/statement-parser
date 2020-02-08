@@ -87,7 +87,7 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
             array.push({
                 date: date,
                 amount: Number(match[2].replace(',', '')),
-                description: '',
+                description: collapseSpaces(match[3]).trim(),
                 from: collapseSpaces(match[3]).trim(),
             });
         } else {
@@ -96,11 +96,7 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
              * Assume that the current line is the last line for the current debit.
              * "from" is always the last line, so shift the current "from" to "method" since it wasn't the last line.
              */
-            if (currentDebit.description) {
-                currentDebit.description += '\n' + currentDebit.from;
-            } else {
-                currentDebit.description = currentDebit.from;
-            }
+            currentDebit.description += '\n' + collapseSpaces(line).trim();
 
             currentDebit.from = collapseSpaces(line).trim();
         }
