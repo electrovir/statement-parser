@@ -46,21 +46,18 @@ export type StatementPdf = {
     yearPrefix?: number;
 };
 
-export type ParsedPdf = {
+export type ParsedPdf = StatementPdf & {
     data: ParsedOutput;
-    type: keyof typeof parsers;
-    yearPrefix?: number;
 };
 
 export async function parsePdfs(pdfs: StatementPdf[], debug = false): Promise<ParsedPdf[]> {
     if (debug) {
         setDebug(true);
     }
-
     const parsedPdfs: ParsedPdf[] = await Promise.all(
         pdfs.map(async pdf => {
             return {
-                type: pdf.type,
+                ...pdf,
                 data: await parsers[pdf.type](
                     pdf.path,
                     pdf.yearPrefix == undefined ? DEFAULT_YEAR_PREFIX : pdf.yearPrefix,
