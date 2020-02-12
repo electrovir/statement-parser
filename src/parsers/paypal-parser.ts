@@ -122,7 +122,7 @@ function nextState(currentState: State, line: string): State {
         case State.ACTIVITY:
             const match = line.match(transactionStartRegExp);
             if (match) {
-                if (Number(match[5]) < 0) {
+                if (Number(sanitizeNumberString(match[5])) < 0) {
                     return State.EXPENSE_INSIDE;
                 } else {
                     return State.INCOME_INSIDE;
