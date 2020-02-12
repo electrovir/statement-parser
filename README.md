@@ -2,11 +2,17 @@
 
 Parse bank and credit card statements.
 
+For English USD only (currently at least).
+
 See the [Parsers](#parsers) section below for the available parsers.
 
 Tests are not included as actual bank statement PDFs should, obviously, not be included anywhere in here and tests are useless without them.
 
 **DISCLAIMER**: I don't necessarily have sufficient data for all of the contained parsers to cover edge cases. Feel free to submit issues or open pull requests to add or modify parsers as needed. Make sure to never accidentally commit sensitive information though (such as the bank statement PDFs that you're parsing). The `downloads` folder is intentionally git-ignored for this purpose: put files in there that shouldn't be committed.
+
+# Development
+
+See [example-parser](src/parsers/example-parser.ts) in the git repo for a starting point.
 
 # Usage
 
@@ -24,7 +30,7 @@ import {parsePdfs, ParsedPdf, ParserType} from 'statement-parser';
 async function run() {
     return await parsePdfs([
         {
-            path: 'downloads/myPdfs.pdf',
+            path: 'downloads/myPdf.pdf',
             type: ParserType.CHASE_CREDIT,
         },
         {
@@ -75,6 +81,7 @@ Currently built parsers are the following:
 -   `'citi-costco-credit'`: for credit card statements from Citi for the Costco credit card.
 -   `'usaa-bank'`: for checking and savings account statements with USAA.
 -   `'usaa-credit'`: for credit card statements from USAA.
+-   `'paypal'`: for statements from PayPal.
 
 The string at the beginning of each bullet point is the parser key. This is to be used in the CLI `parserType` and the `type` parameter for file data passed to the `parsePdfs` function. When used in TypeScript, it is better to use the `ParserType` enum as shown below.
 
@@ -88,7 +95,7 @@ const chaseCreditParser = parsers[ParserType.CHASE_CREDIT];
 ```sh
 # CLI usage
 s-parse downloads/myPdf.pdf chase-credit;
-s-parse downloads/myPdf.pdf usaa-credit;
+s-parse downloads/myPdf2.pdf usaa-credit;
 ```
 
 # Year Prefix

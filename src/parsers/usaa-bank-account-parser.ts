@@ -1,7 +1,7 @@
 import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {flatten2dArray} from '../util/array';
-import {collapseSpaces} from '../util/string';
+import {collapseSpaces, sanitizeNumberString} from '../util/string';
 import {readPdf} from '../readPdf';
 
 enum State {
@@ -86,7 +86,7 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
             const date = dateWithinRange(output.startDate, output.endDate, Number(parts[0]), Number(parts[1]));
             array.push({
                 date: date,
-                amount: Number(match[2].replace(',', '')),
+                amount: Number(sanitizeNumberString(match[2])),
                 description: collapseSpaces(match[3]).trim(),
                 from: collapseSpaces(match[3]).trim(),
             });

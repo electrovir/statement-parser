@@ -1,6 +1,7 @@
 import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
 import {flatten2dArray} from '../util/array';
 import {readPdf} from '../readPdf';
+import {sanitizeNumberString} from '../util/string';
 
 enum State {
     HEADER = 'header',
@@ -12,13 +13,14 @@ enum State {
  * @param yearPrefix       The first two digits of the current year.
  *                         Example: for the year 2010, use 20. For 1991, use 19.
  **/
-export const exampleParser: PdfParse<ParsedOutput> = async (filePath: string, yearPrefix: number) => {
+export const exampleParse: PdfParse<ParsedOutput> = async (filePath: string, yearPrefix: number) => {
     const initOutput: ParsedOutput = {
         expenses: [],
         incomes: [],
         filePath,
         accountSuffix: 'EXAMPLE',
         startDate: new Date(),
+        endDate: new Date(),
     };
 
     const lines: string[] = flatten2dArray(await readPdf(filePath));
@@ -36,19 +38,29 @@ export const exampleParser: PdfParse<ParsedOutput> = async (filePath: string, ye
     return output;
 };
 
-function readPayment(line: string): ParsedTransaction {
-    return {
-        amount: 101,
-        description: 'example transaction',
-        date: new Date(),
-    };
-}
+const validPaymentRegex = /(\d{2}\/\d{2})\s+(.+)\$([-,.\d]+)/;
 
-const validPaymentRegex = /^\d{d}\/\d{2}\s+.+?\s+\$([\d|,|\.]+)$/;
+function readPayment(line: string): ParsedTransaction | undefined {
+    const match = line.match(validPaymentRegex);
+
+    if (match) {
+        const [, dateString, descriptionString, amountString] = match;
+        return {
+            amount: Number(sanitizeNumberString(amountString)),
+            description: descriptionString,
+            date: new Date(dateString),
+        };
+    } else {
+        return undefined;
+    }
+}
 
 function performStateAction(currentState: State, line: string, yearPrefix: number, output: ParsedOutput) {
     if (currentState === State.INNER_STATE && line.match(validPaymentRegex)) {
-        output.incomes.push(readPayment(line));
+        const transaction = readPayment(line);
+        if (transaction) {
+            output.incomes.push(transaction);
+        }
     }
 
     return output;

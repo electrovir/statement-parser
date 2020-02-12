@@ -5,6 +5,7 @@ import {citiCostcoCreditCardParse} from './parsers/citi-costco-credit-card-parse
 import {usaaCreditCardParse} from './parsers/usaa-credit-card-parser';
 import {getEnumTypedValues} from './util/object';
 import {setDebug} from './config';
+import {paypalParse} from './parsers/paypal-parser';
 
 export {ParsedTransaction, ParsedOutput} from './parsers/base-parser';
 export {UsaaBankAccountTransaction, UsaaBankOutput} from './parsers/usaa-bank-account-parser';
@@ -23,6 +24,7 @@ export enum ParserType {
     CITI_COSTCO_CREDIT = 'citi-costco-credit',
     USAA_BANK = 'usaa-bank',
     USAA_CREDIT = 'usaa-credit',
+    PAYPAL = 'paypal',
 }
 
 export function isParserType(x: any): x is ParserType {
@@ -38,6 +40,7 @@ export const parsers = {
     [ParserType.CITI_COSTCO_CREDIT]: citiCostcoCreditCardParse,
     [ParserType.USAA_BANK]: usaaBankAccountParse,
     [ParserType.USAA_CREDIT]: usaaCreditCardParse,
+    [ParserType.PAYPAL]: paypalParse,
 };
 
 export type StatementPdf = {

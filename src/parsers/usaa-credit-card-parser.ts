@@ -2,6 +2,7 @@ import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} fro
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {flatten2dArray} from '../util/array';
 import {readPdf} from '../readPdf';
+import {sanitizeNumberString} from '../util/string';
 
 enum State {
     HEADER = 'header',
@@ -60,7 +61,7 @@ function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTran
         return {
             date: dateWithinRange(undefined, endDate, Number(transactionMonth), Number(transactionDay)),
             postDate: dateWithinRange(undefined, endDate, Number(postMonth), Number(postDay)),
-            amount: Number(amount.replace(',', '')),
+            amount: Number(sanitizeNumberString(amount)),
             description,
             referenceNumber,
         };

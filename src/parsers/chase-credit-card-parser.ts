@@ -1,7 +1,7 @@
 import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
 import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {collapseSpaces} from '../util/string';
+import {collapseSpaces, sanitizeNumberString} from '../util/string';
 import {readPdf} from '../readPdf';
 
 enum State {
@@ -46,7 +46,7 @@ function processTransactionLine(line: string, startDate: Date, endDate: Date): P
         const [, date, description, amount] = match;
         const [month, day] = date.split('/');
         return {
-            amount: Number(amount),
+            amount: Number(sanitizeNumberString(amount)),
             description,
             date: dateWithinRange(startDate, endDate, Number(month), Number(day)),
         };

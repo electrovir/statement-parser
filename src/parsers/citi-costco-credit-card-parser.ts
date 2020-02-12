@@ -4,7 +4,7 @@ import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {flatten2dArray} from '../util/array';
 import {parsePageItems} from 'pdf-text-reader';
 import {Overwrite} from '../util/type';
-import {collapseSpaces} from '../util/string';
+import {collapseSpaces, sanitizeNumberString} from '../util/string';
 import {getPdfDocument} from '../readPdf';
 
 enum State {
@@ -103,7 +103,7 @@ const amountRegex = /^-?\$([\d,\.]+)\s*$/i;
 function parseAmount(input: string, negate: boolean): number {
     const match = input.match(amountRegex);
     if (match) {
-        const amount = Number(match[1]);
+        const amount = Number(sanitizeNumberString(match[1]));
         let multiplier = negate ? -1 : 1;
 
         if (input[0] === '-') {
