@@ -1,6 +1,6 @@
 {
     "name": "statement-parser",
-    "version": "1.3.3",
+    "version": "1.3.4",
     "description": "Parse bank and credit card statements.",
     "license": "MIT",
     "repository": {

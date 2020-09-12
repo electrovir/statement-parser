@@ -1,5 +1,5 @@
 import {readPdfText} from 'pdf-text-reader';
-import {VerbosityLevel, PDFDocumentProxy, getDocument, PDFWorker} from 'pdfjs-dist';
+import {VerbosityLevel, PDFDocumentProxy, getDocument} from 'pdfjs-dist/es5/build/pdf';
 import {existsSync} from 'fs';
 
 export async function readPdf(path: string): Promise<string[][]> {
