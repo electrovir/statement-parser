@@ -106,7 +106,7 @@ function nextState(currentState: State, line: string): State {
             }
             break;
         case State.PURCHASE:
-            if (line === '') {
+            if (line.includes('totals year-to-date')) {
                 return State.END;
             }
             break;
