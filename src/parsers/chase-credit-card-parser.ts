@@ -63,8 +63,13 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
         const accountNumberMatch = line.match(/account number: .+(\d{4})$/i);
         if (closingDateMatch) {
             const [, startDateString, endDateString] = closingDateMatch;
-            output.startDate = dateFromSlashFormat(startDateString, yearPrefix);
-            output.endDate = dateFromSlashFormat(endDateString, yearPrefix);
+            const startDate = dateFromSlashFormat(startDateString, yearPrefix);
+            const endDate = dateFromSlashFormat(endDateString, yearPrefix);
+            // Chase statements sometimes include transactions a few days outside of the statement range.
+            startDate.setDate( startDate.getDate() - 3 );
+            endDate.setDate( endDate.getDate() + 3 );
+            output.startDate = startDate;
+            output.endDate = endDate;
         } else if (accountNumberMatch && !output.accountSuffix) {
             output.accountSuffix = accountNumberMatch[1];
         }
