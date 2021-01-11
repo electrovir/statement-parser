@@ -1,7 +1,7 @@
 import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
 import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {collapseSpaces, sanitizeNumberString} from '../util/string';
+import {sanitizeNumberString} from '../util/string';
 import {readPdf} from '../readPdf';
 
 enum State {
@@ -82,11 +82,7 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
 
         const result = processTransactionLine(line, output.startDate, output.endDate);
 
-        if (typeof result === 'string') {
-            if (!!result) {
-                array[array.length - 1].description += '\n' + collapseSpaces(result);
-            }
-        } else {
+        if (typeof result !== 'string') {
             array.push(result);
         }
     }
