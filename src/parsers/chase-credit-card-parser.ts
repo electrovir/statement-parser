@@ -8,6 +8,11 @@ enum State {
     HEADER = 'header',
     PAYMENT = 'payment',
     PURCHASE = 'purchase',
+    /**
+     * For page boundaries between multiple pages
+     */
+    PAYMENT_PAGE_BOUNDARY = 'payment-page-boundary',
+    PURCHASE_PAGE_BOUNDARY = 'purchase-page-boundary',
     END = 'end',
 }
 
@@ -62,6 +67,17 @@ function processTransactionLine(line: string, startDate: Date, endDate: Date): P
     }
 }
 
+const pageBoundaryRegex = /page\s*\d\s*of\s*\d\s+statement date:/i;
+
+function shouldTransitionToPurchases(line: string): boolean {
+    const normalizedLine = line.toLowerCase();
+    return normalizedLine === 'purchase' || normalizedLine === 'purchases';
+}
+
+function isEndOfPurchases(line: string): boolean {
+    return line.toLowerCase().includes('totals year-to-date');
+}
+
 function performStateAction(currentState: State, line: string, yearPrefix: number, output: ParsedOutput) {
     if (currentState === State.HEADER) {
         const closingDateMatch = line.match(
@@ -75,7 +91,12 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
         } else if (accountNumberMatch && !output.accountSuffix) {
             output.accountSuffix = accountNumberMatch[1];
         }
-    } else if (currentState === State.PAYMENT || currentState === State.PURCHASE) {
+    } else if (
+        (currentState === State.PAYMENT || currentState === State.PURCHASE) &&
+        !isEndOfPurchases(line) &&
+        !shouldTransitionToPurchases(line) &&
+        !line.match(pageBoundaryRegex)
+    ) {
         if (!output.endDate || !output.startDate) {
             throw new Error('Started reading transactions but got no start or end dates.');
         }
@@ -103,17 +124,32 @@ function nextState(currentState: State, line: string): State {
         case State.HEADER:
             if (line === 'payments and other credits') {
                 return State.PAYMENT;
-            } else if (line === 'purchase' || line === 'purchases') {
+            } else if (shouldTransitionToPurchases(line)) {
                 return State.PURCHASE;
             }
             break;
         case State.PAYMENT:
-            if (line === 'purchase' || line === 'purchases') {
+            // this payment page boundary transition has not been tested
+            if (line.match(pageBoundaryRegex)) {
+                return State.PAYMENT_PAGE_BOUNDARY;
+            } else if (shouldTransitionToPurchases(line)) {
+                return State.PURCHASE;
+            }
+            break;
+        case State.PAYMENT_PAGE_BOUNDARY:
+            if (line.startsWith('payments')) {
+                return State.PAYMENT;
+            }
+            break;
+        case State.PURCHASE_PAGE_BOUNDARY:
+            if (shouldTransitionToPurchases(line)) {
                 return State.PURCHASE;
             }
             break;
         case State.PURCHASE:
-            if (line.includes('totals year-to-date')) {
+            if (line.match(pageBoundaryRegex)) {
+                return State.PURCHASE_PAGE_BOUNDARY;
+            } else if (isEndOfPurchases(line)) {
                 return State.END;
             }
             break;
