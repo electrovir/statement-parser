@@ -45,10 +45,17 @@ function processTransactionLine(line: string, startDate: Date, endDate: Date): P
     if (match) {
         const [, date, description, amount] = match;
         const [month, day] = date.split('/');
+
+        // Chase statements sometimes include transactions a few days outside of the statement range
+        const startDateWithWindow = new Date(Number(startDate));
+        startDateWithWindow.setDate(startDateWithWindow.getDate() - 3);
+        const endDateWithWindow = new Date(Number(endDate));
+        endDateWithWindow.setDate(endDateWithWindow.getDate() + 3);
+
         return {
             amount: Number(sanitizeNumberString(amount)),
             description,
-            date: dateWithinRange(startDate, endDate, Number(month), Number(day)),
+            date: dateWithinRange(startDateWithWindow, endDateWithWindow, Number(month), Number(day)),
         };
     } else {
         return line;
