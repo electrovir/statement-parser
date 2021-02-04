@@ -1,7 +1,7 @@
 import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
 import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {collapseSpaces, sanitizeNumberString} from '../util/string';
+import {sanitizeNumberString} from '../util/string';
 import {readPdf} from '../readPdf';
 
 enum State {
@@ -63,8 +63,13 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
         const accountNumberMatch = line.match(/account number: .+(\d{4})$/i);
         if (closingDateMatch) {
             const [, startDateString, endDateString] = closingDateMatch;
-            output.startDate = dateFromSlashFormat(startDateString, yearPrefix);
-            output.endDate = dateFromSlashFormat(endDateString, yearPrefix);
+            const startDate = dateFromSlashFormat(startDateString, yearPrefix);
+            const endDate = dateFromSlashFormat(endDateString, yearPrefix);
+            // Chase statements sometimes include transactions a few days outside of the statement range.
+            startDate.setDate( startDate.getDate() - 3 );
+            endDate.setDate( endDate.getDate() + 3 );
+            output.startDate = startDate;
+            output.endDate = endDate;
         } else if (accountNumberMatch && !output.accountSuffix) {
             output.accountSuffix = accountNumberMatch[1];
         }
@@ -77,11 +82,7 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
 
         const result = processTransactionLine(line, output.startDate, output.endDate);
 
-        if (typeof result === 'string') {
-            if (!!result) {
-                array[array.length - 1].description += '\n' + collapseSpaces(result);
-            }
-        } else {
+        if (typeof result !== 'string') {
             array.push(result);
         }
     }
@@ -96,12 +97,12 @@ function nextState(currentState: State, line: string): State {
         case State.HEADER:
             if (line === 'payments and other credits') {
                 return State.PAYMENT;
-            } else if (line === 'purchase') {
+            } else if (line === 'purchase' || line === 'purchases') {
                 return State.PURCHASE;
             }
             break;
         case State.PAYMENT:
-            if (line === 'purchase') {
+            if (line === 'purchase' || line === 'purchases') {
                 return State.PURCHASE;
             }
             break;
