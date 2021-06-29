@@ -1,12 +1,15 @@
 import {DEBUG} from '../config';
 
 /**
- * @param filePath    path of pdf to read
- * @param yearPrefix  most statements don't include the full year so we must pass in the first two numbers of the year
- *                    so we know what millennium we're in.
- *                    Example: for the year 2010, use 20. For 1991, use 19.
- **/
-export type PdfParse<OutputType extends ParsedOutput, ParserOptions extends object | undefined = undefined> = (
+ * @param filePath Path of pdf to read
+ * @param yearPrefix Most statements don't include the full year so we must pass in the first two
+ *   numbers of the year so we know what millennium we're in. Example: for the year 2010, use 20.
+ *   For 1991, use 19.
+ */
+export type PdfParse<
+    OutputType extends ParsedOutput,
+    ParserOptions extends object | undefined = undefined,
+> = (
     filePath: string,
     yearPrefix: number,
     options?: Readonly<Partial<ParserOptions>>,
@@ -21,17 +24,15 @@ export type ParsedTransaction = {
 /**
  * Incomes vs Expenses means different thing for different account types
  *
- * Incomes
- *      For credit cards, an "income" transaction is a payment on the credit card
- *      For bank accounts or debit cards, an "income" is a deposit
+ * Incomes For credit cards, an "income" transaction is a payment on the credit card For bank
+ * accounts or debit cards, an "income" is a deposit
  *
- * Expenses
- *      For credit cards, an "expense" is a purchase or credit charge
- *      For bank accounts or debit cards, an "expense" is a withdrawal or debit charge
+ * Expenses For credit cards, an "expense" is a purchase or credit charge For bank accounts or debit
+ * cards, an "expense" is a withdrawal or debit charge
  *
- * yearPrefix is the first two digits of the current year
- * accountSuffix is the last digits of the account number (this is usually 4 digits long)
- **/
+ * YearPrefix is the first two digits of the current year accountSuffix is the last digits of the
+ * account number (this is usually 4 digits long)
+ */
 export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
     incomes: T[];
     expenses: T[];
@@ -53,14 +54,17 @@ export type performStateActionFunction<
     lastOutput: OutputType,
     parserOptions?: Required<Readonly<ParserOptions>>,
 ) => OutputType;
-export type nextStateFunction<StateType, ValueType> = (currentState: StateType, input: ValueType) => StateType;
+export type nextStateFunction<StateType, ValueType> = (
+    currentState: StateType,
+    input: ValueType,
+) => StateType;
 
 /**
- * This creates a state machine. The state machine is a Mealy machine but outputs are generated independent
- * of the state transition.
- * As you can see in the arguments, the "action" function (which generates outputs) is distinct from the "next"
- * function, which calculates the next state. The implementation of "action" is of course left to you though,
- * so you can totally just ignore the current value and make this a Moore machine.
+ * This creates a state machine. The state machine is a Mealy machine but outputs are generated
+ * independent of the state transition. As you can see in the arguments, the "action" function
+ * (which generates outputs) is distinct from the "next" function, which calculates the next state.
+ * The implementation of "action" is of course left to you though, so you can totally just ignore
+ * the current value and make this a Moore machine.
  */
 export function createParserStateMachine<
     StateType,
@@ -94,9 +98,7 @@ export function createParserStateMachine<
           endState: StateType;
           yearPrefix: number;
           initOutput?: OutputType;
-          /**
-           * If input parser options is used, default must also be used.
-           */
+          /** If input parser options is used, default must also be used. */
           inputParserOptions: Partial<Readonly<ParserOptions>>;
           defaultParserOptions: Required<Readonly<ParserOptions>>;
       }
@@ -131,7 +133,9 @@ export function createParserStateMachine<
                 if (DEBUG) {
                     console.error(output);
                 }
-                throw new Error(`Reached end of input before hitting end state on ${output.filePath}`);
+                throw new Error(
+                    `Reached end of input before hitting end state on ${output.filePath}`,
+                );
             }
 
             const input: ValueType = nextInput.value;

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import {setDebug, DEBUG} from './config';
 import {readdirSync} from 'fs';
 import {extname} from 'path';
-import {StatementPdf, isParserType, ParserType, parsePdfs, DEFAULT_YEAR_PREFIX} from './index';
+import {DEBUG, setDebug} from './config';
+import {DEFAULT_YEAR_PREFIX, isParserType, parsePdfs, ParserType, StatementPdf} from './index';
 import {getEnumTypedValues} from './util/object';
 
 type args = {
@@ -23,7 +23,9 @@ function validateAndModifyFile(file: ParsingStatementPdf): file is StatementPdf 
     }
 
     if (file.hasOwnProperty('yearPrefix') && file.yearPrefix == undefined) {
-        throw new Error(`Invalid year prefix value given ("${file.yearPrefix}") for "${file.path}"`);
+        throw new Error(
+            `Invalid year prefix value given ("${file.yearPrefix}") for "${file.path}"`,
+        );
     } else if (!file.hasOwnProperty('yearPrefix')) {
         file.yearPrefix = DEFAULT_YEAR_PREFIX;
     }
@@ -40,7 +42,7 @@ function parseArgs(args: string[]): args {
     let currentFile: ParsingStatementPdf = {};
     let lastFile = currentFile;
 
-    args.forEach(arg => {
+    args.forEach((arg) => {
         if (arg === '--debug') {
             parsedArgs.debug = true;
         } else if (arg === '-p') {
@@ -70,24 +72,26 @@ function parseArgs(args: string[]): args {
 
     const dirsToRead: StatementPdf[] = [];
 
-    const finishedFiles = parsedArgs.files.filter((file: ParsingStatementPdf): file is StatementPdf => {
-        validateAndModifyFile(file);
+    const finishedFiles = parsedArgs.files.filter(
+        (file: ParsingStatementPdf): file is StatementPdf => {
+            validateAndModifyFile(file);
 
-        if (file.isDir) {
-            dirsToRead.push(file as StatementPdf);
-            delete file.isDir;
-            return false;
-        }
+            if (file.isDir) {
+                dirsToRead.push(file as StatementPdf);
+                delete file.isDir;
+                return false;
+            }
 
-        return true;
-    });
+            return true;
+        },
+    );
 
     const dirFiles: StatementPdf[] = dirsToRead.reduce((accum: StatementPdf[], dir) => {
         const filePaths = readdirSync(dir.path);
         return accum.concat(
             filePaths
-                .filter(path => extname(path).toLowerCase() === 'pdf')
-                .map(filePath => ({
+                .filter((path) => extname(path).toLowerCase() === 'pdf')
+                .map((filePath) => ({
                     path: filePath,
                     type: dir.type,
                     yearPrefix: dir.yearPrefix,

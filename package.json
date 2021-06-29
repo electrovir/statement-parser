@@ -2,18 +2,6 @@
     "name": "statement-parser",
     "version": "1.3.4",
     "description": "Parse bank and credit card statements.",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/electrovir/statement-parser"
-    },
-    "bugs": {
-        "url": "https://github.com/electrovir/statement-parser/issues"
-    },
-    "homepage": "https://github.com/electrovir/statement-parser",
-    "author": {
-        "name": "electrovir"
-    },
     "keywords": [
         "pdf",
         "bank",
@@ -29,18 +17,32 @@
         "statement",
         "statements"
     ],
+    "homepage": "https://github.com/electrovir/statement-parser",
+    "bugs": {
+        "url": "https://github.com/electrovir/statement-parser/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/electrovir/statement-parser"
+    },
+    "license": "MIT",
+    "author": {
+        "name": "electrovir"
+    },
+    "main": "dist/src/index.js",
+    "typings": "dist/src/index.d.ts",
     "bin": {
         "s-parse": "dist/src/cli.js"
     },
-    "main": "dist/src/index.js",
     "scripts": {
         "compile": "rm -rf dist && tsc && chmod +x dist/src/cli.js",
-        "format": "prettier --write './{,!(dist)/**/}*.+(ts|json|html)'",
-        "prepublishOnly": "npm update && npm install && npm run compile && npm run test-only -- all silent",
+        "format": "prettier --ignore-path .gitignore --write  \"./**/*.{ts,json}\"",
+        "format:check": "prettier --ignore-path .gitignore --check  \"./**/*.{ts,json}\"",
+        "prepublishOnly": "rm -rf node_modules && npm install && npm run compile && npm run test-only -- all silent",
+        "spellcheck": "cspell --no-progress --unique \"./**/*\"",
         "test": "npm run compile; npm run test-only",
         "test-only": "node dist/test/test.js"
     },
-    "typings": "dist/src/index.d.ts",
     "dependencies": {
         "pdf-text-reader": "^1.2.0",
         "pdfjs-dist": "^2.4.456",
@@ -48,6 +50,11 @@
     },
     "devDependencies": {
         "@types/node": "^12.12.58",
-        "@types/pdfjs-dist": "^2.1.5"
+        "@types/pdfjs-dist": "^2.1.5",
+        "cspell": "^5.6.6",
+        "prettier-plugin-jsdoc": "^0.3.23",
+        "prettier-plugin-organize-imports": "^2.2.0",
+        "prettier-plugin-packagejson": "^2.2.11",
+        "prettier-plugin-sort-json": "^0.0.2"
     }
 }

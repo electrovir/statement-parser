@@ -1,11 +1,11 @@
-import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
-import {DEBUG} from '../config';
-import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {flatten2dArray} from '../util/array';
 import {parsePageItems} from 'pdf-text-reader';
-import {Overwrite} from '../util/type';
-import {collapseSpaces, sanitizeNumberString} from '../util/string';
+import {DEBUG} from '../config';
 import {getPdfDocument} from '../readPdf';
+import {flatten2dArray} from '../util/array';
+import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {collapseSpaces, sanitizeNumberString} from '../util/string';
+import {Overwrite} from '../util/type';
+import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -29,12 +29,12 @@ async function readCitiCostcoPdf(path: string): Promise<string[]> {
     let pages: string[][] = [];
 
     /**
-     * The costco card has a right column with costco rewards information that totally screws up the parsing of actual
-     * transactions and payments.
-     * Here, we find where that column is so that it can be removed.
-     **/
+     * The costco card has a right column with costco rewards information that totally screws up the
+     * parsing of actual transactions and payments. Here, we find where that column is so that it
+     * can be removed.
+     */
     const firstPageItems = (await (await doc.getPage(1)).getTextContent()).items;
-    const rightColumnItem = firstPageItems.find(item => item.str === 'Account Summary');
+    const rightColumnItem = firstPageItems.find((item) => item.str === 'Account Summary');
     if (!rightColumnItem) {
         throw new Error('Could not find right column.');
     }
@@ -42,7 +42,7 @@ async function readCitiCostcoPdf(path: string): Promise<string[]> {
 
     for (let i = 0; i < pageCount; i++) {
         const pageItems = (await (await doc.getPage(i + 1)).getTextContent()).items;
-        const filteredItems = pageItems.filter(item => {
+        const filteredItems = pageItems.filter((item) => {
             // filter out the right column
             const beforeColumn = item.transform[4] < columnX;
             const justSpaces = item.str.match(/^\s+$/);
@@ -56,10 +56,13 @@ async function readCitiCostcoPdf(path: string): Promise<string[]> {
 }
 
 /**
- * @param yearPrefix       The first two digits of the current year.
- *                         Example: for the year 2010, use 20. For 1991, use 19.
- **/
-export const citiCostcoCreditCardParse: PdfParse<ParsedOutput> = async (filePath: string, yearPrefix: number) => {
+ * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
+ *   For 1991, use 19.
+ */
+export const citiCostcoCreditCardParse: PdfParse<ParsedOutput> = async (
+    filePath: string,
+    yearPrefix: number,
+) => {
     const initOutput: ParsedOutput = {
         incomes: [],
         expenses: [],
@@ -85,12 +88,12 @@ export const citiCostcoCreditCardParse: PdfParse<ParsedOutput> = async (filePath
 
     const output = parser(lines);
     // Verifying that the "lineParse as BaseTransaction" assumption below is true
-    output.incomes.forEach(income => {
+    output.incomes.forEach((income) => {
         if (income.amount === undefined) {
             throw new Error(`Invalid amount for income transaction: ${income}`);
         }
     });
-    output.expenses.forEach(expense => {
+    output.expenses.forEach((expense) => {
         if (expense.amount === undefined) {
             throw new Error(`Invalid amount for expense transaction: ${expense}`);
         }
@@ -126,12 +129,19 @@ function parseTransactionLine(
             `Tried to parse a transaction but no start date (${output.startDate}) or end date (${output.endDate}) were found yet`,
         );
     }
-    const transactionMatch = line.match(/(?:\d{2}\/\d{2}\s*)?(\d{2})\/(\d{2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i);
+    const transactionMatch = line.match(
+        /(?:\d{2}\/\d{2}\s*)?(\d{2})\/(\d{2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i,
+    );
 
     if (transactionMatch) {
         const [, monthString, dayString, description, amountString] = transactionMatch;
         const transaction: CitiCostcoCreditIntermediateTransaction = {
-            date: dateWithinRange(output.startDate, output.endDate, Number(monthString), Number(dayString)),
+            date: dateWithinRange(
+                output.startDate,
+                output.endDate,
+                Number(monthString),
+                Number(dayString),
+            ),
             amount: undefined,
             description: collapseSpaces(description),
         };
@@ -150,9 +160,16 @@ function parseTransactionLine(
     }
 }
 
-function performStateAction(currentState: State, line: string, yearPrefix: number, output: ParsedOutput) {
+function performStateAction(
+    currentState: State,
+    line: string,
+    yearPrefix: number,
+    output: ParsedOutput,
+) {
     if (currentState === State.HEADER) {
-        const billingPeriodMatch = line.match(/^\s*billing period:\s+(\d{2}\/\d{2}\/\d{2})-(\d{2}\/\d{2}\/\d{2})\s*$/i);
+        const billingPeriodMatch = line.match(
+            /^\s*billing period:\s+(\d{2}\/\d{2}\/\d{2})-(\d{2}\/\d{2}\/\d{2})\s*$/i,
+        );
         const accountEndingMatch = line.match(/account number ending in:\s+(\S+)\s*$/i);
         if (billingPeriodMatch) {
             const [, startDateString, endDateString] = billingPeriodMatch;
@@ -165,7 +182,8 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
         const array = currentState === State.PURCHASE ? output.expenses : output.incomes;
 
         const lineParse = parseTransactionLine(line, output, currentState === State.PAYMENT);
-        const lastTransaction: CitiCostcoCreditIntermediateTransaction | undefined = array[array.length - 1];
+        const lastTransaction: CitiCostcoCreditIntermediateTransaction | undefined =
+            array[array.length - 1];
 
         if (typeof lineParse === 'string') {
             lastTransaction.description += '\n' + lineParse;

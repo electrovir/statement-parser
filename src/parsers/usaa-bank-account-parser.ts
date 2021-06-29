@@ -1,8 +1,8 @@
-import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
-import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {flatten2dArray} from '../util/array';
-import {collapseSpaces, sanitizeNumberString} from '../util/string';
 import {readPdf} from '../readPdf';
+import {flatten2dArray} from '../util/array';
+import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {collapseSpaces, sanitizeNumberString} from '../util/string';
+import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
 
 enum State {
     PAGE_HEADER = 'header',
@@ -22,10 +22,13 @@ export type UsaaBankAccountTransaction = ParsedTransaction & {
 export type UsaaBankOutput = ParsedOutput<UsaaBankAccountTransaction>;
 
 /**
- * @param yearPrefix       The first two digits of the current year.
- *                         Example: for the year 2010, use 20. For 1991, use 19.
- **/
-export const usaaBankAccountParse: PdfParse<UsaaBankOutput> = async (filePath: string, yearPrefix: number) => {
+ * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
+ *   For 1991, use 19.
+ */
+export const usaaBankAccountParse: PdfParse<UsaaBankOutput> = async (
+    filePath: string,
+    yearPrefix: number,
+) => {
     const initOutput: UsaaBankOutput = {
         incomes: [],
         expenses: [],
@@ -52,7 +55,12 @@ export const usaaBankAccountParse: PdfParse<UsaaBankOutput> = async (filePath: s
 
 const validTransactionLineRegex = /(?:^\d{2}\/\d{2}\s+|^\s{4,})/;
 
-function performStateAction(currentState: State, line: string, yearPrefix: number, output: UsaaBankOutput) {
+function performStateAction(
+    currentState: State,
+    line: string,
+    yearPrefix: number,
+    output: UsaaBankOutput,
+) {
     if (currentState === State.STATEMENT_PERIOD && line !== '') {
         const match = line.match(/([\d-]{5})\s+.+?(\d{2}\/\d{2}\/\d{2}).+?(\d{2}\/\d{2}\/\d{2})/);
         if (match) {
@@ -78,12 +86,20 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
         if (match) {
             if (!output.startDate || !output.endDate) {
                 throw new Error(
-                    `Missing start/end date: ${JSON.stringify({start: output.startDate, end: output.endDate})}`,
+                    `Missing start/end date: ${JSON.stringify({
+                        start: output.startDate,
+                        end: output.endDate,
+                    })}`,
                 );
             }
             // start line of debit
             const parts = match[1].split('/');
-            const date = dateWithinRange(output.startDate, output.endDate, Number(parts[0]), Number(parts[1]));
+            const date = dateWithinRange(
+                output.startDate,
+                output.endDate,
+                Number(parts[0]),
+                Number(parts[1]),
+            );
             array.push({
                 date: date,
                 amount: Number(sanitizeNumberString(match[2])),

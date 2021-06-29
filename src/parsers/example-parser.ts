@@ -1,7 +1,7 @@
-import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
-import {flatten2dArray} from '../util/array';
 import {readPdf} from '../readPdf';
+import {flatten2dArray} from '../util/array';
 import {sanitizeNumberString} from '../util/string';
+import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -10,10 +10,13 @@ enum State {
 }
 
 /**
- * @param yearPrefix       The first two digits of the current year.
- *                         Example: for the year 2010, use 20. For 1991, use 19.
- **/
-export const exampleParse: PdfParse<ParsedOutput> = async (filePath: string, yearPrefix: number) => {
+ * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
+ *   For 1991, use 19.
+ */
+export const exampleParse: PdfParse<ParsedOutput> = async (
+    filePath: string,
+    yearPrefix: number,
+) => {
     const initOutput: ParsedOutput = {
         expenses: [],
         incomes: [],
@@ -55,7 +58,12 @@ function readPayment(line: string): ParsedTransaction | undefined {
     }
 }
 
-function performStateAction(currentState: State, line: string, yearPrefix: number, output: ParsedOutput) {
+function performStateAction(
+    currentState: State,
+    line: string,
+    yearPrefix: number,
+    output: ParsedOutput,
+) {
     if (currentState === State.INNER_STATE && line.match(validPaymentRegex)) {
         const transaction = readPayment(line);
         if (transaction) {

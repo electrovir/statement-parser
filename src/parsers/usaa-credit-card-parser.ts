@@ -1,8 +1,8 @@
-import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
-import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {flatten2dArray} from '../util/array';
 import {readPdf} from '../readPdf';
+import {flatten2dArray} from '../util/array';
+import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {sanitizeNumberString} from '../util/string';
+import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -24,10 +24,13 @@ export type UsaaCreditCardTransaction = ParsedTransaction & {
 export type UsaaCreditOutput = ParsedOutput<UsaaCreditCardTransaction>;
 
 /**
- * @param yearPrefix       The first two digits of the current year.
- *                         Example: for the year 2010, use 20. For 1991, use 19.
- **/
-export const usaaCreditCardParse: PdfParse<UsaaCreditOutput> = async (filePath: string, yearPrefix: number) => {
+ * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
+ *   For 1991, use 19.
+ */
+export const usaaCreditCardParse: PdfParse<UsaaCreditOutput> = async (
+    filePath: string,
+    yearPrefix: number,
+) => {
     const initOutput: UsaaCreditOutput = {
         incomes: [],
         expenses: [],
@@ -50,7 +53,8 @@ export const usaaCreditCardParse: PdfParse<UsaaCreditOutput> = async (filePath: 
     return output;
 };
 
-const transactionRegex = /^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
+const transactionRegex =
+    /^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
 
 function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTransaction | string {
     const match = line.match(transactionRegex);
@@ -59,7 +63,12 @@ function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTran
         const [transactionMonth, transactionDay] = transactionDate.split('/');
         const [postMonth, postDay] = postDate.split('/');
         return {
-            date: dateWithinRange(undefined, endDate, Number(transactionMonth), Number(transactionDay)),
+            date: dateWithinRange(
+                undefined,
+                endDate,
+                Number(transactionMonth),
+                Number(transactionDay),
+            ),
             postDate: dateWithinRange(undefined, endDate, Number(postMonth), Number(postDay)),
             amount: Number(sanitizeNumberString(amount)),
             description,
@@ -74,7 +83,12 @@ const tableHeadersRegex = /^trans date\s*post date/i;
 const creditsEndRegex = /(?:^\s*total transactions for)/i;
 const paymentsEndRegex = /(?:^total payments and credits for this period\s+\$)|(?:^$)/i;
 
-function performStateAction(currentState: State, line: string, yearPrefix: number, output: UsaaCreditOutput) {
+function performStateAction(
+    currentState: State,
+    line: string,
+    yearPrefix: number,
+    output: UsaaCreditOutput,
+) {
     if (
         (currentState === State.CREDIT && !line.match(creditsEndRegex)) ||
         (currentState === State.PAYMENT && !line.match(paymentsEndRegex)) ||
@@ -98,7 +112,9 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
             array.push(result);
         }
     } else if (currentState === State.HEADER) {
-        const statementClosingDateRegex = line.match(/statement closing date\s+(\d{2}\/\d{2}\/\d{2})/i);
+        const statementClosingDateRegex = line.match(
+            /statement closing date\s+(\d{2}\/\d{2}\/\d{2})/i,
+        );
         const accountNumberRegex = line.match(/^account number.+(\d{4})$/i);
         if (statementClosingDateRegex) {
             output.endDate = dateFromSlashFormat(statementClosingDateRegex[1], yearPrefix);

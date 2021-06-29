@@ -1,7 +1,7 @@
-import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
-import {flatten2dArray} from '../util/array';
 import {readPdf} from '../readPdf';
+import {flatten2dArray} from '../util/array';
 import {collapseSpaces, sanitizeNumberString} from '../util/string';
+import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -20,9 +20,7 @@ export type PaypalTransaction = ParsedTransaction & {
 
 export type PaypalOutput = ParsedOutput<PaypalTransaction>;
 
-/**
- * @param yearPrefix     this is ignored in this parser because PayPal statements include the entire year
- **/
+/** @param yearPrefix This is ignored in this parser because PayPal statements include the entire year */
 export const paypalParse: PdfParse<PaypalOutput> = async (filePath: string, yearPrefix: number) => {
     const initOutput: PaypalOutput = {
         expenses: [],
@@ -47,9 +45,15 @@ export const paypalParse: PdfParse<PaypalOutput> = async (filePath: string, year
 };
 
 const headerDataLineRegExp = /(\w{3} \d{1,2}, \d{4})\s*-\s*(\w{3} \d{1,2}, \d{4})\s*(.+)$/i;
-const transactionStartRegExp = /^(\d{2}\/\d{2}\/\d{4})\s+(.+?)USD\s+([-,.\d]+)\s+([-,.\d]+)\s+([-,.\d]+)$/i;
+const transactionStartRegExp =
+    /^(\d{2}\/\d{2}\/\d{4})\s+(.+?)USD\s+([-,.\d]+)\s+([-,.\d]+)\s+([-,.\d]+)$/i;
 
-function performStateAction(currentState: State, line: string, yearPrefix: number, output: PaypalOutput) {
+function performStateAction(
+    currentState: State,
+    line: string,
+    yearPrefix: number,
+    output: PaypalOutput,
+) {
     if (currentState === State.HEADER_DATA && !output.startDate) {
         const match = line.match(headerDataLineRegExp);
         if (match) {

@@ -1,22 +1,21 @@
+import {setDebug} from './config';
 import {ParsedOutput} from './parsers/base-parser';
-import {usaaBankAccountParse} from './parsers/usaa-bank-account-parser';
 import {chaseCreditCardParse} from './parsers/chase-credit-card-parser';
 import {citiCostcoCreditCardParse} from './parsers/citi-costco-credit-card-parser';
+import {paypalParse} from './parsers/paypal-parser';
+import {usaaBankAccountParse} from './parsers/usaa-bank-account-parser';
 import {usaaCreditCardParse} from './parsers/usaa-credit-card-parser';
 import {getEnumTypedValues} from './util/object';
-import {setDebug} from './config';
-import {paypalParse} from './parsers/paypal-parser';
 
-export {ParsedTransaction, ParsedOutput} from './parsers/base-parser';
+export {ParsedOutput, ParsedTransaction} from './parsers/base-parser';
 export {UsaaBankAccountTransaction, UsaaBankOutput} from './parsers/usaa-bank-account-parser';
 export {UsaaCreditCardTransaction, UsaaCreditOutput} from './parsers/usaa-credit-card-parser';
 
 /**
- * Most bank statements use a abbreviated year number, for example: 18 for 2018.
- * So we have to make an assumption here as to what millennium the statement is from.
- * This can be altered from both the CLI and the module export interface.
- * See README for additional details.
- **/
+ * Most bank statements use a abbreviated year number, for example: 18 for 2018. So we have to make
+ * an assumption here as to what millennium the statement is from. This can be altered from both the
+ * CLI and the module export interface. See README for additional details.
+ */
 export const DEFAULT_YEAR_PREFIX = 20;
 
 export enum ParserType {
@@ -58,7 +57,7 @@ export async function parsePdfs(pdfs: StatementPdf[], debug = false): Promise<Pa
         setDebug(true);
     }
     const parsedPdfs: ParsedPdf[] = await Promise.all(
-        pdfs.map(async pdf => {
+        pdfs.map(async (pdf) => {
             return {
                 ...pdf,
                 data: await parsers[pdf.type](

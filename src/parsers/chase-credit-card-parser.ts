@@ -1,8 +1,8 @@
-import {createParserStateMachine, ParsedTransaction, PdfParse, ParsedOutput} from './base-parser';
+import {readPdf} from '../readPdf';
 import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {sanitizeNumberString} from '../util/string';
-import {readPdf} from '../readPdf';
+import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -20,9 +20,9 @@ const defaultParserOptions: Required<Readonly<ChaseCreditCardParsingOptions>> = 
 };
 
 /**
- * @param yearPrefix       The first two digits of the current year.
- *                         Example: for the year 2010, use 20. For 1991, use 19.
- **/
+ * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
+ *   For 1991, use 19.
+ */
 export const chaseCreditCardParse: PdfParse<ParsedOutput, ChaseCreditCardParsingOptions> = async (
     filePath: string,
     yearPrefix: number,
@@ -39,7 +39,12 @@ export const chaseCreditCardParse: PdfParse<ParsedOutput, ChaseCreditCardParsing
 
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
-    const parser = createParserStateMachine<State, string, ParsedOutput, ChaseCreditCardParsingOptions>({
+    const parser = createParserStateMachine<
+        State,
+        string,
+        ParsedOutput,
+        ChaseCreditCardParsingOptions
+    >({
         action: performStateAction,
         next: nextState,
         initialState: State.HEADER,
@@ -54,7 +59,11 @@ export const chaseCreditCardParse: PdfParse<ParsedOutput, ChaseCreditCardParsing
     return output;
 };
 
-function processTransactionLine(line: string, startDate: Date, endDate: Date): ParsedTransaction | string {
+function processTransactionLine(
+    line: string,
+    startDate: Date,
+    endDate: Date,
+): ParsedTransaction | string {
     const match = line.match(/^(\d{2}\/\d{2})\s+(\S.+?)\s+([\.\d,\-]+)$/);
     if (match) {
         const [, date, description, amount] = match;
@@ -69,7 +78,12 @@ function processTransactionLine(line: string, startDate: Date, endDate: Date): P
     }
 }
 
-function performStateAction(currentState: State, line: string, yearPrefix: number, output: ParsedOutput) {
+function performStateAction(
+    currentState: State,
+    line: string,
+    yearPrefix: number,
+    output: ParsedOutput,
+) {
     if (currentState === State.HEADER) {
         const closingDateMatch = line.match(
             /opening\/closing date\s+(\d{2}\/\d{2}\/\d{2})\s+-\s+(\d{2}\/\d{2}\/\d{2})/i,

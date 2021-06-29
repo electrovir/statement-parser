@@ -9,7 +9,12 @@ export function dateWithinRange(
     monthNumber: number,
     dayNumber: Number,
 ): Date {
-    const errorString = `Invalid date input: ${JSON.stringify({startDate, endDate, monthNumber, dayNumber})}`;
+    const errorString = `Invalid date input: ${JSON.stringify({
+        startDate,
+        endDate,
+        monthNumber,
+        dayNumber,
+    })}`;
     const month = monthNumber < 10 ? `0${monthNumber}` : String(monthNumber);
     const day = dayNumber < 10 ? `0${dayNumber}` : String(dayNumber);
 
