@@ -25,14 +25,14 @@ export const exampleParse: PdfParse<ParsedOutput> = async (filePath: string, yea
 
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
-    const parser = createParserStateMachine<State, string, ParsedOutput>(
-        performStateAction,
-        nextState,
-        State.HEADER,
-        State.END,
+    const parser = createParserStateMachine<State, string, ParsedOutput>({
+        action: performStateAction,
+        next: nextState,
+        initialState: State.HEADER,
+        endState: State.END,
         yearPrefix,
         initOutput,
-    );
+    });
 
     const output = parser(lines);
     return output;

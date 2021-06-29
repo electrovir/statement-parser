@@ -74,14 +74,14 @@ export const citiCostcoCreditCardParse: PdfParse<ParsedOutput> = async (filePath
         console.log('flattened lines', JSON.stringify(lines, null, 4));
     }
 
-    const parser = createParserStateMachine<State, string, ParsedOutput>(
-        performStateAction,
-        nextState,
-        State.HEADER,
-        State.END,
+    const parser = createParserStateMachine<State, string, ParsedOutput>({
+        action: performStateAction,
+        next: nextState,
+        initialState: State.HEADER,
+        endState: State.END,
         yearPrefix,
         initOutput,
-    );
+    });
 
     const output = parser(lines);
     // Verifying that the "lineParse as BaseTransaction" assumption below is true

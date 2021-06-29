@@ -37,14 +37,14 @@ export const usaaBankAccountParse: PdfParse<UsaaBankOutput> = async (filePath: s
 
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
-    const parser = createParserStateMachine<State, string, UsaaBankOutput>(
-        performStateAction,
-        nextState,
-        State.PAGE_HEADER,
-        State.END,
+    const parser = createParserStateMachine<State, string, UsaaBankOutput>({
+        action: performStateAction,
+        next: nextState,
+        initialState: State.PAGE_HEADER,
+        endState: State.END,
         yearPrefix,
         initOutput,
-    );
+    });
 
     const output = parser(lines);
     return output;

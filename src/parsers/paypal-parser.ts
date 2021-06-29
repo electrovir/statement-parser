@@ -33,14 +33,14 @@ export const paypalParse: PdfParse<PaypalOutput> = async (filePath: string, year
 
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
-    const parser = createParserStateMachine<State, string, PaypalOutput>(
-        performStateAction,
-        nextState,
-        State.HEADER,
-        State.END,
+    const parser = createParserStateMachine<State, string, PaypalOutput>({
+        action: performStateAction,
+        next: nextState,
+        initialState: State.HEADER,
+        endState: State.END,
         yearPrefix,
         initOutput,
-    );
+    });
 
     const output = parser(lines);
     return output;

@@ -11,11 +11,23 @@ enum State {
     END = 'end',
 }
 
+export type ChaseCreditCardParsingOptions = {
+    includeMultiLineDescriptions: boolean;
+};
+
+const defaultParserOptions: Required<Readonly<ChaseCreditCardParsingOptions>> = {
+    includeMultiLineDescriptions: true,
+};
+
 /**
  * @param yearPrefix       The first two digits of the current year.
  *                         Example: for the year 2010, use 20. For 1991, use 19.
  **/
-export const chaseCreditCardParse: PdfParse<ParsedOutput> = async (filePath: string, yearPrefix: number) => {
+export const chaseCreditCardParse: PdfParse<ParsedOutput, ChaseCreditCardParsingOptions> = async (
+    filePath: string,
+    yearPrefix: number,
+    inputParserOptions?: Partial<Readonly<ChaseCreditCardParsingOptions>>,
+) => {
     const initOutput: ParsedOutput = {
         incomes: [],
         expenses: [],
@@ -27,14 +39,16 @@ export const chaseCreditCardParse: PdfParse<ParsedOutput> = async (filePath: str
 
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
-    const parser = createParserStateMachine<State, string, ParsedOutput>(
-        performStateAction,
-        nextState,
-        State.HEADER,
-        State.END,
+    const parser = createParserStateMachine<State, string, ParsedOutput, ChaseCreditCardParsingOptions>({
+        action: performStateAction,
+        next: nextState,
+        initialState: State.HEADER,
+        endState: State.END,
         yearPrefix,
         initOutput,
-    );
+        inputParserOptions,
+        defaultParserOptions,
+    });
 
     const output = parser(lines);
     return output;
@@ -66,8 +80,8 @@ function performStateAction(currentState: State, line: string, yearPrefix: numbe
             const startDate = dateFromSlashFormat(startDateString, yearPrefix);
             const endDate = dateFromSlashFormat(endDateString, yearPrefix);
             // Chase statements sometimes include transactions a few days outside of the statement range.
-            startDate.setDate( startDate.getDate() - 3 );
-            endDate.setDate( endDate.getDate() + 3 );
+            startDate.setDate(startDate.getDate() - 3);
+            endDate.setDate(endDate.getDate() + 3);
             output.startDate = startDate;
             output.endDate = endDate;
         } else if (accountNumberMatch && !output.accountSuffix) {

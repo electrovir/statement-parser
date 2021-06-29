@@ -37,14 +37,14 @@ export const usaaCreditCardParse: PdfParse<UsaaCreditOutput> = async (filePath: 
     };
     const lines: string[] = flatten2dArray(await readPdf(filePath));
 
-    const parser = createParserStateMachine<State, string, UsaaCreditOutput>(
-        performStateAction,
-        nextState,
-        State.HEADER,
-        State.END,
+    const parser = createParserStateMachine<State, string, UsaaCreditOutput>({
+        action: performStateAction,
+        next: nextState,
+        initialState: State.HEADER,
+        endState: State.END,
         yearPrefix,
         initOutput,
-    );
+    });
 
     const output = parser(lines);
     return output;

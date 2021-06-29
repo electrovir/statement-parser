@@ -6,7 +6,11 @@ import {DEBUG} from '../config';
  *                    so we know what millennium we're in.
  *                    Example: for the year 2010, use 20. For 1991, use 19.
  **/
-export type PdfParse<OutputType extends ParsedOutput> = (filePath: string, yearPrefix: number) => Promise<OutputType>;
+export type PdfParse<OutputType extends ParsedOutput, ParserOptions extends object | undefined = undefined> = (
+    filePath: string,
+    yearPrefix: number,
+    options?: Readonly<Partial<ParserOptions>>,
+) => Promise<Readonly<OutputType>>;
 
 export type ParsedTransaction = {
     date: Date;
@@ -37,11 +41,17 @@ export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
     endDate?: Date;
 };
 
-export type performStateActionFunction<StateType, ValueType, OutputType extends ParsedOutput> = (
+export type performStateActionFunction<
+    StateType,
+    ValueType,
+    OutputType extends ParsedOutput,
+    ParserOptions extends object | undefined = undefined,
+> = (
     currentState: StateType,
     input: ValueType,
     yearPrefix: number,
     lastOutput: OutputType,
+    parserOptions?: Required<Readonly<ParserOptions>>,
 ) => OutputType;
 export type nextStateFunction<StateType, ValueType> = (currentState: StateType, input: ValueType) => StateType;
 
@@ -52,19 +62,66 @@ export type nextStateFunction<StateType, ValueType> = (currentState: StateType, 
  * function, which calculates the next state. The implementation of "action" is of course left to you though,
  * so you can totally just ignore the current value and make this a Moore machine.
  */
-export function createParserStateMachine<StateType, ValueType, OutputType extends ParsedOutput>(
-    action: performStateActionFunction<StateType, ValueType, OutputType>,
-    next: nextStateFunction<StateType, ValueType>,
-    initialState: StateType,
-    endState: StateType,
-    yearPrefix: number,
-    initOutput?: OutputType,
-) {
+export function createParserStateMachine<
+    StateType,
+    ValueType,
+    OutputType extends ParsedOutput,
+    ParserOptions extends object | undefined = undefined,
+>({
+    action,
+    next,
+    initialState,
+    endState,
+    yearPrefix,
+    initOutput,
+    inputParserOptions,
+    defaultParserOptions,
+}:
+    | {
+          action: performStateActionFunction<StateType, ValueType, OutputType, ParserOptions>;
+          next: nextStateFunction<StateType, ValueType>;
+          initialState: StateType;
+          endState: StateType;
+          yearPrefix: number;
+          initOutput?: OutputType;
+          inputParserOptions?: undefined;
+          defaultParserOptions?: undefined;
+      }
+    | {
+          action: performStateActionFunction<StateType, ValueType, OutputType, ParserOptions>;
+          next: nextStateFunction<StateType, ValueType>;
+          initialState: StateType;
+          endState: StateType;
+          yearPrefix: number;
+          initOutput?: OutputType;
+          /**
+           * If input parser options is used, default must also be used.
+           */
+          inputParserOptions: Partial<Readonly<ParserOptions>>;
+          defaultParserOptions: Required<Readonly<ParserOptions>>;
+      }
+    | {
+          action: performStateActionFunction<StateType, ValueType, OutputType, ParserOptions>;
+          next: nextStateFunction<StateType, ValueType>;
+          initialState: StateType;
+          endState: StateType;
+          yearPrefix: number;
+          initOutput?: OutputType;
+          inputParserOptions?: undefined;
+          defaultParserOptions: Required<Readonly<ParserOptions>>;
+      }) {
     return (inputs: ValueType[]) => {
         let state = initialState;
         let iterator = inputs[Symbol.iterator]();
+        const parserOptions =
+            defaultParserOptions && inputParserOptions
+                ? {
+                      ...defaultParserOptions,
+                      ...inputParserOptions,
+                  }
+                : undefined;
         // no mutations!
-        // note this will break function properties
+        // note this will break function properties on OutputType
         let output: OutputType = JSON.parse(JSON.stringify(initOutput));
 
         while (state !== endState) {
@@ -83,7 +140,7 @@ export function createParserStateMachine<StateType, ValueType, OutputType extend
                 console.log(`state: "${state}", input: "${input}"`);
             }
             try {
-                output = action(state, input, yearPrefix, output);
+                output = action(state, input, yearPrefix, output, parserOptions);
                 state = next(state, input);
             } catch (error) {
                 error.message += ` in file: ${output.filePath}`;
