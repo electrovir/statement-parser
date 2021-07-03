@@ -1,16 +1,16 @@
 import {parsePageItems} from 'pdf-text-reader';
 import {DEBUG} from '../config';
-import {getPdfDocument} from '../readPdf';
-import {flatten2dArray} from '../util/array';
-import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {collapseSpaces, sanitizeNumberString} from '../util/string';
-import {Overwrite} from '../util/type';
 import {
     createParserStateMachine,
     ParsedOutput,
     ParsedTransaction,
     StatementParser,
-} from './base-parser';
+} from '../parser-base/base-parser';
+import {getPdfDocument} from '../readPdf';
+import {flatten2dArray} from '../util/array';
+import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {collapseSpaces, sanitizeNumberString} from '../util/string';
+import {Overwrite} from '../util/type';
 
 enum State {
     HEADER = 'header',

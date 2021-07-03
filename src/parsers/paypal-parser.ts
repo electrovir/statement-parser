@@ -1,12 +1,12 @@
-import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
-import {collapseSpaces, sanitizeNumberString} from '../util/string';
 import {
     createParserStateMachine,
     ParsedOutput,
     ParsedTransaction,
     StatementParser,
-} from './base-parser';
+} from '../parser-base/base-parser';
+import {readPdf} from '../readPdf';
+import {flatten2dArray} from '../util/array';
+import {collapseSpaces, sanitizeNumberString} from '../util/string';
 
 enum State {
     HEADER = 'header',

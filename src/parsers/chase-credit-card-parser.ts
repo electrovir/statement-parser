@@ -1,13 +1,13 @@
-import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
-import {dateFromSlashFormat, dateWithinRange} from '../util/date';
-import {sanitizeNumberString} from '../util/string';
 import {
     createParserStateMachine,
     ParsedOutput,
     ParsedTransaction,
     StatementParser,
-} from './base-parser';
+} from '../parser-base/base-parser';
+import {readPdf} from '../readPdf';
+import {flatten2dArray} from '../util/array';
+import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {sanitizeNumberString} from '../util/string';
 
 enum State {
     HEADER = 'header',
