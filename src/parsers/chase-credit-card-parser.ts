@@ -2,7 +2,12 @@ import {readPdf} from '../readPdf';
 import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {sanitizeNumberString} from '../util/string';
-import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
+import {
+    createParserStateMachine,
+    ParsedOutput,
+    ParsedTransaction,
+    StatementParser,
+} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -23,41 +28,42 @@ const defaultParserOptions: Required<Readonly<ChaseCreditCardParsingOptions>> = 
  * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
  *   For 1991, use 19.
  */
-export const chaseCreditCardParse: PdfParse<ParsedOutput, ChaseCreditCardParsingOptions> = async (
-    filePath: string,
-    yearPrefix: number,
-    inputParserOptions?: Partial<Readonly<ChaseCreditCardParsingOptions>>,
-) => {
-    const initOutput: ParsedOutput = {
-        incomes: [],
-        expenses: [],
-        accountSuffix: '',
-        filePath,
-        startDate: undefined,
-        endDate: undefined,
+export const chaseCreditCardParse: StatementParser<ParsedOutput, ChaseCreditCardParsingOptions> =
+    async (
+        filePath: string,
+        yearPrefix: number,
+        inputParserOptions?: Partial<Readonly<ChaseCreditCardParsingOptions>>,
+    ) => {
+        const initOutput: ParsedOutput = {
+            incomes: [],
+            expenses: [],
+            accountSuffix: '',
+            filePath,
+            startDate: undefined,
+            endDate: undefined,
+        };
+
+        const lines: string[] = flatten2dArray(await readPdf(filePath));
+
+        const parser = createParserStateMachine<
+            State,
+            string,
+            ParsedOutput,
+            ChaseCreditCardParsingOptions
+        >({
+            action: performStateAction,
+            next: nextState,
+            initialState: State.HEADER,
+            endState: State.END,
+            yearPrefix,
+            initOutput,
+            inputParserOptions,
+            defaultParserOptions,
+        });
+
+        const output = parser(lines);
+        return output;
     };
-
-    const lines: string[] = flatten2dArray(await readPdf(filePath));
-
-    const parser = createParserStateMachine<
-        State,
-        string,
-        ParsedOutput,
-        ChaseCreditCardParsingOptions
-    >({
-        action: performStateAction,
-        next: nextState,
-        initialState: State.HEADER,
-        endState: State.END,
-        yearPrefix,
-        initOutput,
-        inputParserOptions,
-        defaultParserOptions,
-    });
-
-    const output = parser(lines);
-    return output;
-};
 
 function processTransactionLine(
     line: string,

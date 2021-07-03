@@ -2,7 +2,12 @@ import {readPdf} from '../readPdf';
 import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {collapseSpaces, sanitizeNumberString} from '../util/string';
-import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
+import {
+    createParserStateMachine,
+    ParsedOutput,
+    ParsedTransaction,
+    StatementParser,
+} from './base-parser';
 
 enum State {
     PAGE_HEADER = 'header',
@@ -25,7 +30,7 @@ export type UsaaBankOutput = ParsedOutput<UsaaBankAccountTransaction>;
  * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
  *   For 1991, use 19.
  */
-export const usaaBankAccountParse: PdfParse<UsaaBankOutput> = async (
+export const usaaBankAccountParse: StatementParser<UsaaBankOutput> = async (
     filePath: string,
     yearPrefix: number,
 ) => {

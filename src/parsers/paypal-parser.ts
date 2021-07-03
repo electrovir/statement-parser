@@ -1,7 +1,12 @@
 import {readPdf} from '../readPdf';
 import {flatten2dArray} from '../util/array';
 import {collapseSpaces, sanitizeNumberString} from '../util/string';
-import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
+import {
+    createParserStateMachine,
+    ParsedOutput,
+    ParsedTransaction,
+    StatementParser,
+} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -21,7 +26,10 @@ export type PaypalTransaction = ParsedTransaction & {
 export type PaypalOutput = ParsedOutput<PaypalTransaction>;
 
 /** @param yearPrefix This is ignored in this parser because PayPal statements include the entire year */
-export const paypalParse: PdfParse<PaypalOutput> = async (filePath: string, yearPrefix: number) => {
+export const paypalParse: StatementParser<PaypalOutput> = async (
+    filePath: string,
+    yearPrefix: number,
+) => {
     const initOutput: PaypalOutput = {
         expenses: [],
         incomes: [],

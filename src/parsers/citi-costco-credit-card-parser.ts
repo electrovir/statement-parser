@@ -5,7 +5,12 @@ import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {collapseSpaces, sanitizeNumberString} from '../util/string';
 import {Overwrite} from '../util/type';
-import {createParserStateMachine, ParsedOutput, ParsedTransaction, PdfParse} from './base-parser';
+import {
+    createParserStateMachine,
+    ParsedOutput,
+    ParsedTransaction,
+    StatementParser,
+} from './base-parser';
 
 enum State {
     HEADER = 'header',
@@ -59,7 +64,7 @@ async function readCitiCostcoPdf(path: string): Promise<string[]> {
  * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
  *   For 1991, use 19.
  */
-export const citiCostcoCreditCardParse: PdfParse<ParsedOutput> = async (
+export const citiCostcoCreditCardParse: StatementParser<ParsedOutput> = async (
     filePath: string,
     yearPrefix: number,
 ) => {
