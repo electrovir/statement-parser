@@ -1,9 +1,6 @@
-import {
-    createParserStateMachine,
-    ParsedOutput,
-    ParsedTransaction,
-    StatementParser,
-} from '../parser-base/base-parser';
+import {ParsedOutput, ParsedTransaction} from '..';
+import {createParserStateMachine} from '../parser-base/parser-state-machine';
+import {StatementParser} from '../parser-base/statement-parser';
 import {readPdf} from '../readPdf';
 import {flatten2dArray} from '../util/array';
 import {sanitizeNumberString} from '../util/string';

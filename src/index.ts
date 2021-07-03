@@ -1,5 +1,5 @@
 import {setDebug} from './config';
-import {ParsedOutput} from './parser-base/base-parser';
+import {ParsedOutput} from './parser-base/parsed-output';
 import {chaseCreditCardParse} from './parsers/chase-credit-card-parser';
 import {citiCostcoCreditCardParse} from './parsers/citi-costco-credit-card-parser';
 import {paypalParse} from './parsers/paypal-parser';
@@ -7,7 +7,7 @@ import {usaaBankAccountParse} from './parsers/usaa-bank-account-parser';
 import {usaaCreditCardParse} from './parsers/usaa-credit-card-parser';
 import {getEnumTypedValues} from './util/object';
 
-export {ParsedOutput, ParsedTransaction} from './parser-base/base-parser';
+export {ParsedOutput, ParsedTransaction} from './parser-base/parsed-output';
 export {UsaaBankAccountTransaction, UsaaBankOutput} from './parsers/usaa-bank-account-parser';
 export {UsaaCreditCardTransaction, UsaaCreditOutput} from './parsers/usaa-credit-card-parser';
 

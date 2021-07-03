@@ -1,46 +1,5 @@
 import {DEBUG} from '../config';
-
-/**
- * @param filePath Path of pdf to read
- * @param yearPrefix Most statements don't include the full year so we must pass in the first two
- *   numbers of the year so we know what millennium we're in. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
-export type StatementParser<
-    OutputType extends ParsedOutput,
-    ParserOptions extends object | undefined = undefined,
-> = (
-    filePath: string,
-    yearPrefix: number,
-    options?: Readonly<Partial<ParserOptions>>,
-) => Promise<Readonly<OutputType>>;
-
-export type ParsedTransaction = {
-    date: Date;
-    amount: number;
-    description: string;
-};
-
-/**
- * Incomes vs Expenses means different thing for different account types
- *
- * Incomes For credit cards, an "income" transaction is a payment on the credit card For bank
- * accounts or debit cards, an "income" is a deposit
- *
- * Expenses For credit cards, an "expense" is a purchase or credit charge For bank accounts or debit
- * cards, an "expense" is a withdrawal or debit charge
- *
- * YearPrefix is the first two digits of the current year accountSuffix is the last digits of the
- * account number (this is usually 4 digits long)
- */
-export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
-    incomes: T[];
-    expenses: T[];
-    accountSuffix: string;
-    filePath: string;
-    startDate?: Date;
-    endDate?: Date;
-};
+import {ParsedOutput} from './parsed-output';
 
 export type performStateActionFunction<
     StateType,
