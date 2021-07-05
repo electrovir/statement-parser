@@ -24,3 +24,7 @@ export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
     startDate?: Date;
     endDate?: Date;
 };
+
+export type InitOutput<FullOutputType extends ParsedOutput> = Partial<
+    Omit<FullOutputType, 'filePath'>
+>;
