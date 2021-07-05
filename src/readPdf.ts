@@ -1,6 +1,7 @@
 import {existsSync} from 'fs';
 import {readPdfText} from 'pdf-text-reader';
-import {getDocument, PDFDocumentProxy, VerbosityLevel} from 'pdfjs-dist/es5/build/pdf';
+import {getDocument, VerbosityLevel} from 'pdfjs-dist/es5/build/pdf';
+import {PDFDocumentProxy} from 'pdfjs-dist/types/display/api';
 
 export async function readPdf(path: string): Promise<string[][]> {
     if (!existsSync(path)) {
