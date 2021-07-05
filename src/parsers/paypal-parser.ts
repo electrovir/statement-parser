@@ -1,19 +1,31 @@
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {createParserStateMachine} from '../parser-base/parser-state-machine';
-import {StatementParser} from '../parser-base/statement-parser';
-import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
+import {createStatementParser} from '../parser-base/statement-parser';
+import {getEnumTypedValues} from '../util/object';
 import {collapseSpaces, sanitizeNumberString} from '../util/string';
 
 enum State {
-    HEADER = 'header',
-    HEADER_DATA = 'header-data',
-    ACTIVITY = 'activity',
-    EXPENSE_INSIDE = 'expense-inside',
-    INCOME_INSIDE = 'income-inside',
-    ACTIVITY_HEADER = 'activity-header',
-    END = 'end',
+    Header = 'header',
+    HeaderData = 'header-data',
+    Activity = 'activity',
+    ExpenseInside = 'expense-inside',
+    IncomeInside = 'income-inside',
+    ActivityHeader = 'activity-header',
+    End = 'end',
 }
+
+enum ParsingTriggers {
+    Usd = 'USD',
+    MustNotify = 'you must notify us no later than',
+    Statement = 'statement period',
+}
+
+const pageEndRegExp = /^page\s+\d+$/i;
+const activityHeader = /date\s+description\s+currency\s+amount\s+fees\s+total/i;
+const headerDataLineRegExp = /(\w{3} \d{1,2}, \d{4})\s*-\s*(\w{3} \d{1,2}, \d{4})\s*(.+)$/i;
+const transactionStartRegExp = new RegExp(
+    `^(\\d{2}/\\d{2}/\\d{4})\\s+(.+?)${ParsingTriggers.Usd}\\s+([-,.\\d]+)\\s+([-,.\\d]+)\\s+([-,.\\d]+)$`,
+    'i',
+);
 
 export type PaypalTransaction = ParsedTransaction & {
     baseAmount: number;
@@ -23,35 +35,13 @@ export type PaypalTransaction = ParsedTransaction & {
 export type PaypalOutput = ParsedOutput<PaypalTransaction>;
 
 /** @param yearPrefix This is ignored in this parser because PayPal statements include the entire year */
-export const paypalParse: StatementParser<PaypalOutput> = async (
-    filePath: string,
-    yearPrefix: number,
-) => {
-    const initOutput: PaypalOutput = {
-        expenses: [],
-        incomes: [],
-        filePath,
-        accountSuffix: '',
-    };
-
-    const lines: string[] = flatten2dArray(await readPdf(filePath));
-
-    const parser = createParserStateMachine<State, string, PaypalOutput>({
-        action: performStateAction,
-        next: nextState,
-        initialState: State.HEADER,
-        endState: State.END,
-        yearPrefix,
-        initOutput,
-    });
-
-    const output = parser(lines);
-    return output;
-};
-
-const headerDataLineRegExp = /(\w{3} \d{1,2}, \d{4})\s*-\s*(\w{3} \d{1,2}, \d{4})\s*(.+)$/i;
-const transactionStartRegExp =
-    /^(\d{2}\/\d{2}\/\d{4})\s+(.+?)USD\s+([-,.\d]+)\s+([-,.\d]+)\s+([-,.\d]+)$/i;
+export const paypalStatementParser = createStatementParser<State, PaypalOutput>({
+    action: performStateAction,
+    next: nextState,
+    initialState: State.Header,
+    endState: State.End,
+    parserKeywords: [...getEnumTypedValues(ParsingTriggers), activityHeader, pageEndRegExp],
+});
 
 function performStateAction(
     currentState: State,
@@ -59,7 +49,7 @@ function performStateAction(
     yearPrefix: number,
     output: PaypalOutput,
 ) {
-    if (currentState === State.HEADER_DATA && !output.startDate) {
+    if (currentState === State.HeaderData && !output.startDate) {
         const match = line.match(headerDataLineRegExp);
         if (match) {
             const [, startDate, endDate, accountId] = match;
@@ -67,7 +57,7 @@ function performStateAction(
             output.endDate = new Date(endDate);
             output.accountSuffix = accountId;
         }
-    } else if (currentState === State.ACTIVITY) {
+    } else if (currentState === State.Activity) {
         const match = line.match(transactionStartRegExp);
         if (match) {
             const [, date, description, amountString, fees, total] = match;
@@ -84,63 +74,60 @@ function performStateAction(
 
             array.push(newTransaction);
         }
-    } else if (currentState === State.EXPENSE_INSIDE && line !== '') {
+    } else if (currentState === State.ExpenseInside && line !== '') {
         output.expenses[output.expenses.length - 1].description += collapseSpaces(line);
-    } else if (currentState === State.INCOME_INSIDE && line !== '') {
+    } else if (currentState === State.IncomeInside && line !== '') {
         output.incomes[output.incomes.length - 1].description += ' ' + collapseSpaces(line);
     }
 
     return output;
 }
 
-const pageEndRegExp = /^page\s+\d+$/i;
-const activityHeader = /date\s+description\s+currency\s+amount\s+fees\s+total/i;
-
 function nextState(currentState: State, line: string): State {
     line = line.toLowerCase();
 
-    if (line.includes('you must notify us no later than')) {
-        return State.END;
+    if (line.includes(ParsingTriggers.MustNotify)) {
+        return State.End;
     }
 
     switch (currentState) {
-        case State.HEADER:
-            if (line.includes('statement period')) {
-                return State.HEADER_DATA;
+        case State.Header:
+            if (line.includes(ParsingTriggers.Statement)) {
+                return State.HeaderData;
             } else if (line.match(activityHeader)) {
-                return State.ACTIVITY_HEADER;
+                return State.ActivityHeader;
             }
             break;
-        case State.ACTIVITY_HEADER:
+        case State.ActivityHeader:
             if (line === '') {
-                return State.ACTIVITY;
+                return State.Activity;
             }
             break;
-        case State.HEADER_DATA:
-            return State.HEADER;
-        case State.EXPENSE_INSIDE:
+        case State.HeaderData:
+            return State.Header;
+        case State.ExpenseInside:
             if (line === '') {
-                return State.ACTIVITY;
+                return State.Activity;
             }
             break;
-        case State.INCOME_INSIDE:
+        case State.IncomeInside:
             if (line === '') {
-                return State.ACTIVITY;
+                return State.Activity;
             }
             break;
-        case State.ACTIVITY:
+        case State.Activity:
             const match = line.match(transactionStartRegExp);
             if (match) {
                 if (Number(sanitizeNumberString(match[5])) < 0) {
-                    return State.EXPENSE_INSIDE;
+                    return State.ExpenseInside;
                 } else {
-                    return State.INCOME_INSIDE;
+                    return State.IncomeInside;
                 }
             } else if (line.match(pageEndRegExp)) {
-                return State.HEADER;
+                return State.Header;
             }
             break;
-        case State.END:
+        case State.End:
             break;
     }
 

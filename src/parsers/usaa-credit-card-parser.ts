@@ -1,21 +1,28 @@
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {createParserStateMachine} from '../parser-base/parser-state-machine';
-import {StatementParser} from '../parser-base/statement-parser';
-import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
+import {createStatementParser} from '../parser-base/statement-parser';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {getEnumTypedValues} from '../util/object';
 import {sanitizeNumberString} from '../util/string';
 
 enum State {
-    HEADER = 'header',
-    PAYMENT_HEADER = 'payment-header',
-    PAYMENT = 'payment',
-    PAYMENT_FILLER = 'payment-filler',
-    CREDIT_HEADER = 'credit-header',
-    CREDIT = 'credit',
-    CREDIT_FILLER = 'credit-filler',
-    CREDIT_STARTED_FILLER = 'credit-started-filler',
-    END = 'end',
+    Header = 'header',
+    PaymentHeader = 'payment-header',
+    Payment = 'payment',
+    PaymentFiller = 'payment-filler',
+    CreditHeader = 'credit-header',
+    Credit = 'credit',
+    CreditFiller = 'credit-filler',
+    CreditStartedFiller = 'credit-started-filler',
+    End = 'end',
+}
+
+enum ParsingTriggers {
+    TotalPayments = 'total payments and credits for this period',
+    AccountNumber = 'account number',
+    Payments = 'payments and credits',
+    TransactionsContinued = 'transactions (continued)',
+    Transactions = 'transactions',
+    StatementClosingDate = 'statement closing date',
 }
 
 export type UsaaCreditCardTransaction = ParsedTransaction & {
@@ -25,35 +32,31 @@ export type UsaaCreditCardTransaction = ParsedTransaction & {
 
 export type UsaaCreditOutput = ParsedOutput<UsaaCreditCardTransaction>;
 
-/**
- * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
-export const usaaCreditCardParse: StatementParser<UsaaCreditOutput> = async (
-    filePath: string,
-    yearPrefix: number,
-) => {
-    const initOutput: UsaaCreditOutput = {
-        incomes: [],
-        expenses: [],
-        filePath,
-        accountSuffix: '',
-        endDate: undefined,
-    };
-    const lines: string[] = flatten2dArray(await readPdf(filePath));
+const tableHeadersRegExp = /^trans date\s*post date/i;
+const creditsEndRegExp = /^\s*total transactions for/i;
+const paymentsEndRegExp = new RegExp(`(?:^${ParsingTriggers.TotalPayments}\\s+\\$)|(?:^$)`, 'i');
+const accountNumberRegExp = new RegExp(`${ParsingTriggers.AccountNumber}.+(\\d{4})$`, 'i');
+const paymentsAndCreditsRegExp = new RegExp(`^\\s*${ParsingTriggers.Payments}$`);
+// const closingDateRegExp = /statement closing date\s+(\d{2}\/\d{2}\/\d{2})/i;
+const closingDateRegExp = new RegExp(
+    `${ParsingTriggers.StatementClosingDate}\\s+(\\d{2}/\\d{2}/\\d{2})`,
+    'i',
+);
+const feesRegExp = /^\s*fees\s*$/;
 
-    const parser = createParserStateMachine<State, string, UsaaCreditOutput>({
-        action: performStateAction,
-        next: nextState,
-        initialState: State.HEADER,
-        endState: State.END,
-        yearPrefix,
-        initOutput,
-    });
-
-    const output = parser(lines);
-    return output;
-};
+export const usaaCreditCardStatementParser = createStatementParser<State, UsaaCreditOutput>({
+    action: performStateAction,
+    next: nextState,
+    initialState: State.Header,
+    endState: State.End,
+    parserKeywords: [
+        ...getEnumTypedValues(ParsingTriggers),
+        tableHeadersRegExp,
+        creditsEndRegExp,
+        closingDateRegExp,
+        feesRegExp,
+    ],
+});
 
 const transactionRegex =
     /^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
@@ -81,10 +84,6 @@ function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTran
     }
 }
 
-const tableHeadersRegex = /^trans date\s*post date/i;
-const creditsEndRegex = /(?:^\s*total transactions for)/i;
-const paymentsEndRegex = /(?:^total payments and credits for this period\s+\$)|(?:^$)/i;
-
 function performStateAction(
     currentState: State,
     line: string,
@@ -92,17 +91,17 @@ function performStateAction(
     output: UsaaCreditOutput,
 ) {
     if (
-        (currentState === State.CREDIT && !line.match(creditsEndRegex)) ||
-        (currentState === State.PAYMENT && !line.match(paymentsEndRegex)) ||
+        (currentState === State.Credit && !line.match(creditsEndRegExp)) ||
+        (currentState === State.Payment && !line.match(paymentsEndRegExp)) ||
         // read expenses if in this state and the line matches a transaction
-        (currentState === State.CREDIT_STARTED_FILLER && line.match(transactionRegex))
+        (currentState === State.CreditStartedFiller && line.match(transactionRegex))
     ) {
         if (!output.endDate) {
             throw new Error('Started reading transactions but got no statement close date.');
         }
         // Critical ternary here that sets the array to expenses even if the above State.CREDIT_STARTED_FILLER condition
         // is true
-        const array = currentState === State.PAYMENT ? output.incomes : output.expenses;
+        const array = currentState === State.Payment ? output.incomes : output.expenses;
 
         const result = processTransactionLine(line, output.endDate);
 
@@ -113,11 +112,9 @@ function performStateAction(
         } else {
             array.push(result);
         }
-    } else if (currentState === State.HEADER) {
-        const statementClosingDateRegex = line.match(
-            /statement closing date\s+(\d{2}\/\d{2}\/\d{2})/i,
-        );
-        const accountNumberRegex = line.match(/^account number.+(\d{4})$/i);
+    } else if (currentState === State.Header) {
+        const statementClosingDateRegex = line.match(closingDateRegExp);
+        const accountNumberRegex = line.match(accountNumberRegExp);
         if (statementClosingDateRegex) {
             output.endDate = dateFromSlashFormat(statementClosingDateRegex[1], yearPrefix);
         } else if (accountNumberRegex && !output.accountSuffix) {
@@ -132,55 +129,55 @@ function nextState(currentState: State, line: string): State {
     line = line.toLowerCase();
 
     switch (currentState) {
-        case State.HEADER:
-            if (line.match(/^\s*payments and credits$/)) {
-                return State.PAYMENT_HEADER;
+        case State.Header:
+            if (line.match(paymentsAndCreditsRegExp)) {
+                return State.PaymentHeader;
             }
             break;
-        case State.PAYMENT_HEADER:
-            if (line.match(tableHeadersRegex)) {
-                return State.PAYMENT;
+        case State.PaymentHeader:
+            if (line.match(tableHeadersRegExp)) {
+                return State.Payment;
             }
             break;
-        case State.PAYMENT:
+        case State.Payment:
             // use this regex here so that it can be shared with performStateAction
-            if (line.match(paymentsEndRegex)) {
+            if (line.match(paymentsEndRegExp)) {
                 if (line === '') {
-                    return State.PAYMENT_FILLER;
+                    return State.PaymentFiller;
                 } else {
-                    return State.CREDIT_FILLER;
+                    return State.CreditFiller;
                 }
             }
             break;
-        case State.PAYMENT_FILLER:
-            if (line === 'transactions (continued)') {
-                return State.PAYMENT;
+        case State.PaymentFiller:
+            if (line === ParsingTriggers.TransactionsContinued) {
+                return State.Payment;
             }
             break;
-        case State.CREDIT_FILLER:
-            if (line === 'transactions') {
-                return State.CREDIT_HEADER;
-            } else if (line.match(/^\s*fees\s*$/)) {
-                return State.END;
+        case State.CreditFiller:
+            if (line === ParsingTriggers.Transactions) {
+                return State.CreditHeader;
+            } else if (line.match(feesRegExp)) {
+                return State.End;
             }
             break;
-        case State.CREDIT_STARTED_FILLER:
-            if (line === 'transactions (continued)' || line.match(transactionRegex)) {
-                return State.CREDIT;
+        case State.CreditStartedFiller:
+            if (line === ParsingTriggers.TransactionsContinued || line.match(transactionRegex)) {
+                return State.Credit;
             }
             break;
-        case State.CREDIT_HEADER:
-            if (line.match(tableHeadersRegex)) {
-                return State.CREDIT;
+        case State.CreditHeader:
+            if (line.match(tableHeadersRegExp)) {
+                return State.Credit;
             }
             break;
-        case State.CREDIT:
-            if (line.match(creditsEndRegex)) {
-                return State.CREDIT_FILLER;
+        case State.Credit:
+            if (line.match(creditsEndRegExp)) {
+                return State.CreditFiller;
             } else if (line === '') {
-                return State.CREDIT_STARTED_FILLER;
+                return State.CreditStartedFiller;
             }
-        case State.END:
+        case State.End:
             break;
     }
 

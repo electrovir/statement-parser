@@ -1,17 +1,31 @@
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {createParserStateMachine} from '../parser-base/parser-state-machine';
-import {StatementParser} from '../parser-base/statement-parser';
-import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
+import {createStatementParser} from '../parser-base/statement-parser';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {getEnumTypedValues} from '../util/object';
 import {sanitizeNumberString} from '../util/string';
 
 enum State {
-    HEADER = 'header',
-    PAYMENT = 'payment',
-    PURCHASE = 'purchase',
-    END = 'end',
+    Header = 'header',
+    Payment = 'payment',
+    Purchase = 'purchase',
+    End = 'end',
 }
+
+enum ChaseParsingTriggers {
+    Payments = 'payments and other credits',
+    Purchase = 'purchase',
+    Purchases = 'purchases',
+    Totals = 'totals year-to-date',
+    AccountNumber = 'account number:',
+    OpeningClosingDate = 'opening/closing date',
+}
+
+const accountNumberRegExp = new RegExp(`${ChaseParsingTriggers.AccountNumber} .+(\\d{4})$`, 'i');
+
+const closingDateRegExp = new RegExp(
+    `${ChaseParsingTriggers.OpeningClosingDate}\\s+(\\d{2}/\\d{2}/\\d{2})\\s+-\\s+(\\d{2}/\\d{2}/\\d{2})`,
+    'i',
+);
 
 export type ChaseCreditCardParsingOptions = {
     includeMultiLineDescriptions: boolean;
@@ -25,42 +39,18 @@ const defaultParserOptions: Required<Readonly<ChaseCreditCardParsingOptions>> = 
  * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
  *   For 1991, use 19.
  */
-export const chaseCreditCardParse: StatementParser<ParsedOutput, ChaseCreditCardParsingOptions> =
-    async (
-        filePath: string,
-        yearPrefix: number,
-        inputParserOptions?: Partial<Readonly<ChaseCreditCardParsingOptions>>,
-    ) => {
-        const initOutput: ParsedOutput = {
-            incomes: [],
-            expenses: [],
-            accountSuffix: '',
-            filePath,
-            startDate: undefined,
-            endDate: undefined,
-        };
-
-        const lines: string[] = flatten2dArray(await readPdf(filePath));
-
-        const parser = createParserStateMachine<
-            State,
-            string,
-            ParsedOutput,
-            ChaseCreditCardParsingOptions
-        >({
-            action: performStateAction,
-            next: nextState,
-            initialState: State.HEADER,
-            endState: State.END,
-            yearPrefix,
-            initOutput,
-            inputParserOptions,
-            defaultParserOptions,
-        });
-
-        const output = parser(lines);
-        return output;
-    };
+export const chaseCreditCardParser = createStatementParser<
+    State,
+    ParsedOutput,
+    ChaseCreditCardParsingOptions
+>({
+    action: performStateAction,
+    next: nextState,
+    initialState: State.Header,
+    endState: State.End,
+    defaultParserOptions,
+    parserKeywords: getEnumTypedValues(ChaseParsingTriggers),
+});
 
 function processTransactionLine(
     line: string,
@@ -87,11 +77,9 @@ function performStateAction(
     yearPrefix: number,
     output: ParsedOutput,
 ) {
-    if (currentState === State.HEADER) {
-        const closingDateMatch = line.match(
-            /opening\/closing date\s+(\d{2}\/\d{2}\/\d{2})\s+-\s+(\d{2}\/\d{2}\/\d{2})/i,
-        );
-        const accountNumberMatch = line.match(/account number: .+(\d{4})$/i);
+    if (currentState === State.Header) {
+        const closingDateMatch = line.match(closingDateRegExp);
+        const accountNumberMatch = line.match(accountNumberRegExp);
         if (closingDateMatch) {
             const [, startDateString, endDateString] = closingDateMatch;
             const startDate = dateFromSlashFormat(startDateString, yearPrefix);
@@ -104,12 +92,12 @@ function performStateAction(
         } else if (accountNumberMatch && !output.accountSuffix) {
             output.accountSuffix = accountNumberMatch[1];
         }
-    } else if (currentState === State.PAYMENT || currentState === State.PURCHASE) {
+    } else if (currentState === State.Payment || currentState === State.Purchase) {
         if (!output.endDate || !output.startDate) {
             throw new Error('Started reading transactions but got no start or end dates.');
         }
 
-        const array = currentState === State.PAYMENT ? output.incomes : output.expenses;
+        const array = currentState === State.Payment ? output.incomes : output.expenses;
 
         const result = processTransactionLine(line, output.startDate, output.endDate);
 
@@ -125,21 +113,24 @@ function nextState(currentState: State, line: string): State {
     line = line.toLowerCase();
 
     switch (currentState) {
-        case State.HEADER:
-            if (line === 'payments and other credits') {
-                return State.PAYMENT;
-            } else if (line === 'purchase' || line === 'purchases') {
-                return State.PURCHASE;
+        case State.Header:
+            if (line === ChaseParsingTriggers.Payments) {
+                return State.Payment;
+            } else if (
+                line === ChaseParsingTriggers.Purchase ||
+                line === ChaseParsingTriggers.Purchases
+            ) {
+                return State.Purchase;
             }
             break;
-        case State.PAYMENT:
-            if (line === 'purchase' || line === 'purchases') {
-                return State.PURCHASE;
+        case State.Payment:
+            if (line === ChaseParsingTriggers.Purchase || line === ChaseParsingTriggers.Purchases) {
+                return State.Purchase;
             }
             break;
-        case State.PURCHASE:
-            if (line.includes('totals year-to-date')) {
-                return State.END;
+        case State.Purchase:
+            if (line.includes(ChaseParsingTriggers.Totals)) {
+                return State.End;
             }
             break;
     }

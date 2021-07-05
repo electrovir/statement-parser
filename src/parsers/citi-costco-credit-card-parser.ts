@@ -1,21 +1,34 @@
 import {parsePageItems} from 'pdf-text-reader';
-import {DEBUG} from '../config';
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {createParserStateMachine} from '../parser-base/parser-state-machine';
-import {StatementParser} from '../parser-base/statement-parser';
+import {createStatementParser} from '../parser-base/statement-parser';
 import {getPdfDocument} from '../readPdf';
-import {flatten2dArray} from '../util/array';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {getEnumTypedValues} from '../util/object';
 import {collapseSpaces, sanitizeNumberString} from '../util/string';
 import {Overwrite} from '../util/type';
 
 enum State {
-    HEADER = 'header',
-    PAYMENT = 'payment',
-    PURCHASE = 'purchase',
-    PURCHASE_FILLER = 'purchase filler',
-    END = 'end',
+    Header = 'header',
+    Payment = 'payment',
+    Purchase = 'purchase',
+    PurchaseFiller = 'purchase filler',
+    End = 'end',
 }
+
+enum ParsingTriggers {
+    BillingPeriod = 'billing period:',
+    AccountNumber = 'account number ending in:',
+    Payments = 'payments, credits and adjustments',
+    Purchases = 'standard purchases',
+    AccountSummary = 'Account Summary',
+}
+
+const billingPeriodRegExp = new RegExp(
+    `^\\s*${ParsingTriggers.BillingPeriod}\\s+(\\d{2}/\\d{2}/\\d{2})-(\\d{2}/\\d{2}/\\d{2})\\s*$`,
+    'i',
+);
+
+const accountNumberRegExp = new RegExp(`${ParsingTriggers.AccountNumber}\\s+(\\S+)\\s*$`, 'i');
 
 type CitiCostcoCreditIntermediateTransaction = Overwrite<
     ParsedTransaction,
@@ -24,7 +37,21 @@ type CitiCostcoCreditIntermediateTransaction = Overwrite<
     }
 >;
 
-async function readCitiCostcoPdf(path: string): Promise<string[]> {
+/**
+ * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
+ *   For 1991, use 19.
+ */
+export const citiCostcoCreditCardParser = createStatementParser<State, ParsedOutput>({
+    action: performStateAction,
+    next: nextState,
+    initialState: State.Header,
+    endState: State.End,
+    parserKeywords: getEnumTypedValues(ParsingTriggers),
+    pdfProcessing: readCitiCostcoPdf,
+    outputValidation: outputValidation,
+});
+
+async function readCitiCostcoPdf(path: string): Promise<string[][]> {
     const doc = await getPdfDocument(path);
     const pageCount = doc.numPages;
 
@@ -36,7 +63,9 @@ async function readCitiCostcoPdf(path: string): Promise<string[]> {
      * can be removed.
      */
     const firstPageItems = (await (await doc.getPage(1)).getTextContent()).items;
-    const rightColumnItem = firstPageItems.find((item) => item.str === 'Account Summary');
+    const rightColumnItem = firstPageItems.find(
+        (item) => item.str === ParsingTriggers.AccountSummary,
+    );
     if (!rightColumnItem) {
         throw new Error('Could not find right column.');
     }
@@ -54,41 +83,10 @@ async function readCitiCostcoPdf(path: string): Promise<string[]> {
         pages = pages.concat();
     }
 
-    return flatten2dArray(pages);
+    return pages;
 }
 
-/**
- * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
-export const citiCostcoCreditCardParse: StatementParser<ParsedOutput> = async (
-    filePath: string,
-    yearPrefix: number,
-) => {
-    const initOutput: ParsedOutput = {
-        incomes: [],
-        expenses: [],
-        accountSuffix: '',
-        filePath,
-        startDate: undefined,
-        endDate: undefined,
-    };
-    const lines: string[] = await readCitiCostcoPdf(filePath);
-
-    if (DEBUG) {
-        console.log('flattened lines', JSON.stringify(lines, null, 4));
-    }
-
-    const parser = createParserStateMachine<State, string, ParsedOutput>({
-        action: performStateAction,
-        next: nextState,
-        initialState: State.HEADER,
-        endState: State.END,
-        yearPrefix,
-        initOutput,
-    });
-
-    const output = parser(lines);
+function outputValidation(output: ParsedOutput) {
     // Verifying that the "lineParse as BaseTransaction" assumption below is true
     output.incomes.forEach((income) => {
         if (income.amount === undefined) {
@@ -100,8 +98,7 @@ export const citiCostcoCreditCardParse: StatementParser<ParsedOutput> = async (
             throw new Error(`Invalid amount for expense transaction: ${expense}`);
         }
     });
-    return output;
-};
+}
 
 const amountRegex = /^-?\$([\d,\.]+)\s*$/i;
 
@@ -131,6 +128,7 @@ function parseTransactionLine(
             `Tried to parse a transaction but no start date (${output.startDate}) or end date (${output.endDate}) were found yet`,
         );
     }
+
     const transactionMatch = line.match(
         /(?:\d{2}\/\d{2}\s*)?(\d{2})\/(\d{2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i,
     );
@@ -168,11 +166,9 @@ function performStateAction(
     yearPrefix: number,
     output: ParsedOutput,
 ) {
-    if (currentState === State.HEADER) {
-        const billingPeriodMatch = line.match(
-            /^\s*billing period:\s+(\d{2}\/\d{2}\/\d{2})-(\d{2}\/\d{2}\/\d{2})\s*$/i,
-        );
-        const accountEndingMatch = line.match(/account number ending in:\s+(\S+)\s*$/i);
+    if (currentState === State.Header) {
+        const billingPeriodMatch = line.match(billingPeriodRegExp);
+        const accountEndingMatch = line.match(accountNumberRegExp);
         if (billingPeriodMatch) {
             const [, startDateString, endDateString] = billingPeriodMatch;
             output.startDate = dateFromSlashFormat(startDateString, yearPrefix);
@@ -180,10 +176,10 @@ function performStateAction(
         } else if (accountEndingMatch) {
             output.accountSuffix = accountEndingMatch[1];
         }
-    } else if (line !== '' && (currentState === State.PURCHASE || currentState === State.PAYMENT)) {
-        const array = currentState === State.PURCHASE ? output.expenses : output.incomes;
+    } else if (line !== '' && (currentState === State.Purchase || currentState === State.Payment)) {
+        const array = currentState === State.Purchase ? output.expenses : output.incomes;
 
-        const lineParse = parseTransactionLine(line, output, currentState === State.PAYMENT);
+        const lineParse = parseTransactionLine(line, output, currentState === State.Payment);
         const lastTransaction: CitiCostcoCreditIntermediateTransaction | undefined =
             array[array.length - 1];
 
@@ -212,26 +208,26 @@ function nextState(currentState: State, line: string): State {
     line = line.toLowerCase();
 
     switch (currentState) {
-        case State.HEADER:
-            if (line === 'payments, credits and adjustments') {
-                return State.PAYMENT;
-            } else if (line === 'standard purchases') {
-                return State.PURCHASE;
+        case State.Header:
+            if (line === ParsingTriggers.Payments) {
+                return State.Payment;
+            } else if (line === ParsingTriggers.Purchases) {
+                return State.Purchase;
             }
             break;
-        case State.PAYMENT:
+        case State.Payment:
             if (line === '') {
-                return State.PURCHASE_FILLER;
+                return State.PurchaseFiller;
             }
             break;
-        case State.PURCHASE_FILLER:
-            if (line === 'standard purchases') {
-                return State.PURCHASE;
+        case State.PurchaseFiller:
+            if (line === ParsingTriggers.Purchases) {
+                return State.Purchase;
             }
             break;
-        case State.PURCHASE:
+        case State.Purchase:
             if (line === '') {
-                return State.END;
+                return State.End;
             }
             break;
     }

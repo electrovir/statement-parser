@@ -1,47 +1,20 @@
 import {ParsedOutput, ParsedTransaction} from '..';
-import {createParserStateMachine} from '../parser-base/parser-state-machine';
-import {StatementParser} from '../parser-base/statement-parser';
-import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
+import {createStatementParser} from '../parser-base/statement-parser';
 import {sanitizeNumberString} from '../util/string';
 
 enum State {
-    HEADER = 'header',
-    INNER_STATE = 'inner-state',
-    END = 'end',
+    Header = 'header',
+    InnerState = 'inner-state',
+    End = 'end',
 }
 
-/**
- * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
-export const exampleParse: StatementParser<ParsedOutput> = async (
-    filePath: string,
-    yearPrefix: number,
-) => {
-    const initOutput: ParsedOutput = {
-        expenses: [],
-        incomes: [],
-        filePath,
-        accountSuffix: 'EXAMPLE',
-        startDate: new Date(),
-        endDate: new Date(),
-    };
-
-    const lines: string[] = flatten2dArray(await readPdf(filePath));
-
-    const parser = createParserStateMachine<State, string, ParsedOutput>({
-        action: performStateAction,
-        next: nextState,
-        initialState: State.HEADER,
-        endState: State.END,
-        yearPrefix,
-        initOutput,
-    });
-
-    const output = parser(lines);
-    return output;
-};
+export const exampleStatementParser = createStatementParser<State, ParsedOutput>({
+    action: performStateAction,
+    next: nextState,
+    initialState: State.Header,
+    endState: State.End,
+    parserKeywords: [],
+});
 
 const validPaymentRegex = /(\d{2}\/\d{2})\s+(.+)\$([-,.\d]+)/;
 
@@ -66,7 +39,7 @@ function performStateAction(
     yearPrefix: number,
     output: ParsedOutput,
 ) {
-    if (currentState === State.INNER_STATE && line.match(validPaymentRegex)) {
+    if (currentState === State.InnerState && line.match(validPaymentRegex)) {
         const transaction = readPayment(line);
         if (transaction) {
             output.incomes.push(transaction);
@@ -80,14 +53,14 @@ function nextState(currentState: State, line: string): State {
     line = line.toLowerCase();
 
     switch (currentState) {
-        case State.HEADER:
-            return State.INNER_STATE;
-        case State.INNER_STATE:
+        case State.Header:
+            return State.InnerState;
+        case State.InnerState:
             if (line === 'end inner state') {
-                return State.END;
+                return State.End;
             }
             break;
-        case State.END:
+        case State.End:
             break;
     }
 

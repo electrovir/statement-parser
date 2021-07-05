@@ -1,21 +1,28 @@
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {createParserStateMachine} from '../parser-base/parser-state-machine';
-import {StatementParser} from '../parser-base/statement-parser';
-import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
+import {createStatementParser} from '../parser-base/statement-parser';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
+import {getEnumTypedValues} from '../util/object';
 import {collapseSpaces, sanitizeNumberString} from '../util/string';
 
 enum State {
-    PAGE_HEADER = 'header',
-    STATEMENT_PERIOD = 'statement-period',
-    DEPOSIT_HEADERS = 'deposit-headers',
-    DEPOSIT = 'deposit',
-    DEBIT_HEADERS = 'debit-headers',
-    DEBIT = 'debit',
-    FILLER = 'filler',
-    END = 'end',
+    PageHeader = 'header',
+    StatementPeriod = 'statement-period',
+    DepositHeaders = 'deposit-headers',
+    Deposit = 'deposit',
+    DebitHeaders = 'debit-headers',
+    Debit = 'debit',
+    Filler = 'filler',
+    End = 'end',
 }
+
+enum ParsingTriggers {
+    OtherDebits = 'other debits',
+}
+
+const otherDebitsRegExp = /^\s+other debits$/;
+const accountSummaryRegExp = /^\s+account balance summary$/;
+const accountNumberHeaderRegExp = /account number\s+account type\s+statement period/;
+const depositsRegExp = /^\s+deposits and other credits$/;
 
 export type UsaaBankAccountTransaction = ParsedTransaction & {
     from: string;
@@ -23,37 +30,19 @@ export type UsaaBankAccountTransaction = ParsedTransaction & {
 
 export type UsaaBankOutput = ParsedOutput<UsaaBankAccountTransaction>;
 
-/**
- * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
-export const usaaBankAccountParse: StatementParser<UsaaBankOutput> = async (
-    filePath: string,
-    yearPrefix: number,
-) => {
-    const initOutput: UsaaBankOutput = {
-        incomes: [],
-        expenses: [],
-        filePath,
-        accountSuffix: '',
-        startDate: undefined,
-        endDate: undefined,
-    };
-
-    const lines: string[] = flatten2dArray(await readPdf(filePath));
-
-    const parser = createParserStateMachine<State, string, UsaaBankOutput>({
-        action: performStateAction,
-        next: nextState,
-        initialState: State.PAGE_HEADER,
-        endState: State.END,
-        yearPrefix,
-        initOutput,
-    });
-
-    const output = parser(lines);
-    return output;
-};
+export const usaaBankAccountStatementParser = createStatementParser<State, UsaaBankOutput>({
+    action: performStateAction,
+    next: nextState,
+    initialState: State.PageHeader,
+    endState: State.End,
+    parserKeywords: [
+        ...getEnumTypedValues(ParsingTriggers),
+        otherDebitsRegExp,
+        accountSummaryRegExp,
+        accountNumberHeaderRegExp,
+        depositsRegExp,
+    ],
+});
 
 const validTransactionLineRegex = /(?:^\d{2}\/\d{2}\s+|^\s{4,})/;
 
@@ -63,7 +52,7 @@ function performStateAction(
     yearPrefix: number,
     output: UsaaBankOutput,
 ) {
-    if (currentState === State.STATEMENT_PERIOD && line !== '') {
+    if (currentState === State.StatementPeriod && line !== '') {
         const match = line.match(/([\d-]{5})\s+.+?(\d{2}\/\d{2}\/\d{2}).+?(\d{2}\/\d{2}\/\d{2})/);
         if (match) {
             const [, accountSuffix, startDateString, endDateString] = match;
@@ -75,14 +64,14 @@ function performStateAction(
             output.endDate = dateFromSlashFormat(endDateString, yearPrefix);
         } else {
             throw new Error(
-                `Start and end date were not found in line for "${State.STATEMENT_PERIOD}" state: "${line}"`,
+                `Start and end date were not found in line for "${State.StatementPeriod}" state: "${line}"`,
             );
         }
     } else if (
-        (currentState === State.DEBIT || currentState === State.DEPOSIT) &&
+        (currentState === State.Debit || currentState === State.Deposit) &&
         line.match(validTransactionLineRegex)
     ) {
-        const array = currentState === State.DEBIT ? output.expenses : output.incomes;
+        const array = currentState === State.Debit ? output.expenses : output.incomes;
 
         const match = line.match(/^(\d{2}\/\d{2})\s+((?:\d+|,|\.)+)\s+(.*)$/);
         if (match) {
@@ -122,50 +111,48 @@ function performStateAction(
     return output;
 }
 
-const otherDebitsRegex = /^\s+other debits$/;
-
 function nextState(currentState: State, line: string): State {
     line = line.toLowerCase();
 
-    if (line.match(/^\s+account balance summary$/)) {
-        return State.END;
+    if (line.match(accountSummaryRegExp)) {
+        return State.End;
     }
 
     switch (currentState) {
-        case State.PAGE_HEADER:
-            if (line.match(/account number\s+account type\s+statement period/)) {
-                return State.STATEMENT_PERIOD;
-            } else if (line.match(/^\s+deposits and other credits$/)) {
-                return State.DEPOSIT_HEADERS;
+        case State.PageHeader:
+            if (line.match(accountNumberHeaderRegExp)) {
+                return State.StatementPeriod;
+            } else if (line.match(depositsRegExp)) {
+                return State.DepositHeaders;
             }
             break;
-        case State.STATEMENT_PERIOD:
+        case State.StatementPeriod:
             if (line !== '') {
-                return State.PAGE_HEADER;
+                return State.PageHeader;
             }
             break;
-        case State.DEPOSIT_HEADERS:
-            return State.DEPOSIT;
-        case State.DEPOSIT:
+        case State.DepositHeaders:
+            return State.Deposit;
+        case State.Deposit:
             if (line === '') {
-                return State.FILLER;
-            } else if (line.match(otherDebitsRegex)) {
-                return State.DEBIT_HEADERS;
+                return State.Filler;
+            } else if (line.match(otherDebitsRegExp)) {
+                return State.DebitHeaders;
             }
             break;
-        case State.DEBIT_HEADERS:
-            return State.DEBIT;
-        case State.DEBIT:
+        case State.DebitHeaders:
+            return State.Debit;
+        case State.Debit:
             if (line === '') {
-                return State.FILLER;
+                return State.Filler;
             }
             break;
-        case State.FILLER:
-            if (line.match(otherDebitsRegex)) {
-                return State.DEBIT_HEADERS;
+        case State.Filler:
+            if (line.match(otherDebitsRegExp)) {
+                return State.DebitHeaders;
             }
             break;
-        case State.END:
+        case State.End:
             break;
     }
 
