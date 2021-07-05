@@ -43,12 +43,7 @@ export const paypalStatementParser = createStatementParser<State, PaypalOutput>(
     parserKeywords: [...getEnumTypedValues(ParsingTriggers), activityHeader, pageEndRegExp],
 });
 
-function performStateAction(
-    currentState: State,
-    line: string,
-    yearPrefix: number,
-    output: PaypalOutput,
-) {
+function performStateAction(currentState: State, line: string, output: PaypalOutput) {
     if (currentState === State.HeaderData && !output.startDate) {
         const match = line.match(headerDataLineRegExp);
         if (match) {

@@ -33,12 +33,7 @@ function readPayment(line: string): ParsedTransaction | undefined {
     }
 }
 
-function performStateAction(
-    currentState: State,
-    line: string,
-    yearPrefix: number,
-    output: ParsedOutput,
-) {
+function performStateAction(currentState: State, line: string, output: ParsedOutput) {
     if (currentState === State.InnerState && line.match(validPaymentRegex)) {
         const transaction = readPayment(line);
         if (transaction) {

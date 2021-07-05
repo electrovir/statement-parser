@@ -1,4 +1,5 @@
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
+import {CombineWithBaseParserOptions} from '../parser-base/parser-options';
 import {createStatementParser} from '../parser-base/statement-parser';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {getEnumTypedValues} from '../util/object';
@@ -87,8 +88,8 @@ function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTran
 function performStateAction(
     currentState: State,
     line: string,
-    yearPrefix: number,
     output: UsaaCreditOutput,
+    parserOptions: CombineWithBaseParserOptions,
 ) {
     if (
         (currentState === State.Credit && !line.match(creditsEndRegExp)) ||
@@ -116,7 +117,10 @@ function performStateAction(
         const statementClosingDateRegex = line.match(closingDateRegExp);
         const accountNumberRegex = line.match(accountNumberRegExp);
         if (statementClosingDateRegex) {
-            output.endDate = dateFromSlashFormat(statementClosingDateRegex[1], yearPrefix);
+            output.endDate = dateFromSlashFormat(
+                statementClosingDateRegex[1],
+                parserOptions.yearPrefix,
+            );
         } else if (accountNumberRegex && !output.accountSuffix) {
             output.accountSuffix = accountNumberRegex[1];
         }

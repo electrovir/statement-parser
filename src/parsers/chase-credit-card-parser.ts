@@ -1,4 +1,5 @@
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
+import {CombineWithBaseParserOptions} from '../parser-base/parser-options';
 import {createStatementParser} from '../parser-base/statement-parser';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {getEnumTypedValues} from '../util/object';
@@ -74,16 +75,16 @@ function processTransactionLine(
 function performStateAction(
     currentState: State,
     line: string,
-    yearPrefix: number,
     output: ParsedOutput,
+    parserOptions: CombineWithBaseParserOptions<ChaseCreditCardParsingOptions>,
 ) {
     if (currentState === State.Header) {
         const closingDateMatch = line.match(closingDateRegExp);
         const accountNumberMatch = line.match(accountNumberRegExp);
         if (closingDateMatch) {
             const [, startDateString, endDateString] = closingDateMatch;
-            const startDate = dateFromSlashFormat(startDateString, yearPrefix);
-            const endDate = dateFromSlashFormat(endDateString, yearPrefix);
+            const startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
+            const endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
             // Chase statements sometimes include transactions a few days outside of the statement range.
             startDate.setDate(startDate.getDate() - 3);
             endDate.setDate(endDate.getDate() + 3);

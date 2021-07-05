@@ -1,28 +1,12 @@
 import {readPdf} from '../readPdf';
 import {flatten2dArray} from '../util/array';
 import {ParsedOutput} from './parsed-output';
+import {ParseFunction, ParseFunctionInputs} from './parser-function';
 import {
     createParserStateMachine,
     CreateStateMachineInput,
     ParserInitInput,
 } from './parser-state-machine';
-
-/**
- * @param filePath Path of pdf to read
- * @param yearPrefix Most statements don't include the full year so we must pass in the first two
- *   numbers of the year so we know what millennium we're in. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
-export type ParseFunction<
-    OutputType extends ParsedOutput,
-    ParserOptions extends object | undefined = undefined,
-> = (input: Readonly<ParseFunctionInputs<ParserOptions>>) => Promise<Readonly<OutputType>>;
-
-export type ParseFunctionInputs<ParserOptions extends object | undefined = undefined> = {
-    filePath: string;
-    yearPrefix: number;
-    parserOptions?: Readonly<Partial<ParserOptions>>;
-};
 
 export type StatementParser<
     OutputType extends ParsedOutput,
@@ -65,7 +49,6 @@ export function createStatementParser<
 
     const parser: ParseFunction<OutputType, ParserOptions> = async ({
         filePath,
-        yearPrefix,
         parserOptions,
     }: Readonly<ParseFunctionInputs<ParserOptions>>) => {
         if (!inputs.pdfProcessing) {
@@ -80,7 +63,6 @@ export function createStatementParser<
             // ParserInitInput is a subtype of inputs' type
             ...(inputs as ParserInitInput<StateType, OutputType, ParserOptions>),
             filePath,
-            yearPrefix,
             inputParserOptions: parserOptions,
         };
 

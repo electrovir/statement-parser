@@ -1,4 +1,5 @@
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
+import {CombineWithBaseParserOptions} from '../parser-base/parser-options';
 import {createStatementParser} from '../parser-base/statement-parser';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
 import {getEnumTypedValues} from '../util/object';
@@ -49,8 +50,8 @@ const validTransactionLineRegex = /(?:^\d{2}\/\d{2}\s+|^\s{4,})/;
 function performStateAction(
     currentState: State,
     line: string,
-    yearPrefix: number,
     output: UsaaBankOutput,
+    parserOptions: CombineWithBaseParserOptions,
 ) {
     if (currentState === State.StatementPeriod && line !== '') {
         const match = line.match(/([\d-]{5})\s+.+?(\d{2}\/\d{2}\/\d{2}).+?(\d{2}\/\d{2}\/\d{2})/);
@@ -60,8 +61,8 @@ function performStateAction(
             if (!output.accountSuffix.match(/\d{4}/)) {
                 throw new Error(`Invalid account suffix: "${output.accountSuffix}"`);
             }
-            output.startDate = dateFromSlashFormat(startDateString, yearPrefix);
-            output.endDate = dateFromSlashFormat(endDateString, yearPrefix);
+            output.startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
+            output.endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
         } else {
             throw new Error(
                 `Start and end date were not found in line for "${State.StatementPeriod}" state: "${line}"`,

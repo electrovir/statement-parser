@@ -1,5 +1,6 @@
 import {parsePageItems} from 'pdf-text-reader';
 import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
+import {CombineWithBaseParserOptions} from '../parser-base/parser-options';
 import {createStatementParser} from '../parser-base/statement-parser';
 import {getPdfDocument} from '../readPdf';
 import {dateFromSlashFormat, dateWithinRange} from '../util/date';
@@ -163,16 +164,16 @@ function parseTransactionLine(
 function performStateAction(
     currentState: State,
     line: string,
-    yearPrefix: number,
     output: ParsedOutput,
+    parserOptions: CombineWithBaseParserOptions,
 ) {
     if (currentState === State.Header) {
         const billingPeriodMatch = line.match(billingPeriodRegExp);
         const accountEndingMatch = line.match(accountNumberRegExp);
         if (billingPeriodMatch) {
             const [, startDateString, endDateString] = billingPeriodMatch;
-            output.startDate = dateFromSlashFormat(startDateString, yearPrefix);
-            output.endDate = dateFromSlashFormat(endDateString, yearPrefix);
+            output.startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
+            output.endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
         } else if (accountEndingMatch) {
             output.accountSuffix = accountEndingMatch[1];
         }

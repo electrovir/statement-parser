@@ -1,5 +1,11 @@
 import {DEBUG} from '../config';
+import {IfEquals} from '../util/type';
 import {InitOutput, ParsedOutput} from './parsed-output';
+import {
+    BaseParserOptions,
+    collapseDefaultParserOptions,
+    CombineWithBaseParserOptions,
+} from './parser-options';
 
 export type performStateActionFunction<
     StateType,
@@ -8,9 +14,8 @@ export type performStateActionFunction<
 > = (
     currentState: StateType,
     input: string,
-    yearPrefix: number,
     lastOutput: OutputType,
-    parserOptions?: Required<Readonly<ParserOptions>>,
+    parserOptions: CombineWithBaseParserOptions<ParserOptions>,
 ) => OutputType;
 export type nextStateFunction<StateType> = (currentState: StateType, input: string) => StateType;
 
@@ -23,12 +28,14 @@ export type ParserInitInput<
     next: nextStateFunction<StateType>;
     endState: StateType;
     initialState: StateType;
-    initOutput?: InitOutput<OutputType>;
-} & (ParserOptions extends undefined
-    ? {defaultParserOptions?: undefined}
-    : {
-          defaultParserOptions: Required<Readonly<ParserOptions>>;
-      });
+    initOutput?: Readonly<InitOutput<OutputType>>;
+    defaultParserOptions?: IfEquals<
+        ParserOptions,
+        BaseParserOptions,
+        undefined,
+        Readonly<Required<ParserOptions>>
+    >;
+};
 
 export type CreateStateMachineInput<
     StateType,
@@ -36,8 +43,7 @@ export type CreateStateMachineInput<
     ParserOptions extends object | undefined = undefined,
 > = ParserInitInput<StateType, OutputType, ParserOptions> & {
     filePath: string;
-    yearPrefix: number;
-    inputParserOptions?: Readonly<Partial<ParserOptions>>;
+    inputParserOptions?: Partial<CombineWithBaseParserOptions<ParserOptions>>;
 };
 
 export type StateMachineParserFunction<OutputType extends ParsedOutput> = (
@@ -61,7 +67,6 @@ export function createParserStateMachine<
     initialState,
     endState,
     filePath,
-    yearPrefix,
     initOutput,
     inputParserOptions,
     defaultParserOptions,
@@ -71,25 +76,20 @@ export function createParserStateMachine<
     return (inputs: Readonly<string[]>): Readonly<OutputType> => {
         let state: StateType = initialState;
         let iterator = inputs[Symbol.iterator]();
-        const defaultOptions: Required<Readonly<ParserOptions>> | undefined =
-            defaultParserOptions as
-                | undefined
-                /**
-                 * This cast is needed because Typescript is too smart about the conditional type in
-                 * ParserInitInput and defaultParserOptions gets turned into just "object"
-                 */
-                | Required<Readonly<ParserOptions>>;
-        const parserOptions: Required<Readonly<ParserOptions>> | undefined = defaultOptions
-            ? {
-                  ...defaultOptions,
-                  ...(inputParserOptions ?? {}),
-              }
-            : undefined;
+
+        const defaultOptions: CombineWithBaseParserOptions<ParserOptions> =
+            collapseDefaultParserOptions(defaultParserOptions);
+
+        const parserOptions: CombineWithBaseParserOptions<ParserOptions> = {
+            ...defaultOptions,
+            ...(inputParserOptions ?? {}),
+        };
 
         const startingOutput: ParsedOutput = {
             incomes: [],
             expenses: [],
             filePath,
+            yearPrefix: parserOptions.yearPrefix,
             accountSuffix: '',
             endDate: undefined,
             startDate: undefined,
@@ -119,7 +119,7 @@ export function createParserStateMachine<
                 console.log(`state: "${state}", input: "${input}"`);
             }
             try {
-                output = action(state, input, yearPrefix, output, parserOptions);
+                output = action(state, input, output, parserOptions);
                 state = next(state, input);
             } catch (error) {
                 error.message += ` in file: ${filePath}`;

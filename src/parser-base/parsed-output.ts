@@ -21,6 +21,7 @@ export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
     expenses: T[];
     accountSuffix: string;
     filePath: string;
+    yearPrefix: number;
     startDate?: Date;
     endDate?: Date;
 };
