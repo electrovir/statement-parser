@@ -41,9 +41,8 @@
         "test-only": "node dist/test/test.js"
     },
     "dependencies": {
-        "pdf-text-reader": "^1.2.0",
-        "pdfjs-dist": "^2.8.335",
-        "typescript": "^4.3.5"
+        "pdf-text-reader": "^2.0.2",
+        "pdfjs-dist": "^2.8.335"
     },
     "devDependencies": {
         "@types/node": "^16.0.0",
@@ -53,6 +52,7 @@
         "prettier-plugin-jsdoc": "^0.3.23",
         "prettier-plugin-organize-imports": "^2.2.0",
         "prettier-plugin-packagejson": "^2.2.11",
-        "prettier-plugin-sort-json": "^0.0.2"
+        "prettier-plugin-sort-json": "^0.0.2",
+        "typescript": "^4.3.5"
     }
 }

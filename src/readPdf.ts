@@ -1,7 +1,7 @@
 import {existsSync} from 'fs';
 import {readPdfText} from 'pdf-text-reader';
-import {getDocument, VerbosityLevel} from 'pdfjs-dist/es5/build/pdf';
-import {PDFDocumentProxy} from 'pdfjs-dist/types/display/api';
+import {getDocument, VerbosityLevel} from 'pdfjs-dist/legacy/build/pdf';
+import {DocumentInitParameters, PDFDocumentProxy} from 'pdfjs-dist/types/display/api';
 
 export async function readPdf(path: string): Promise<string[][]> {
     if (!existsSync(path)) {
@@ -14,6 +14,6 @@ export async function getPdfDocument(path: string): Promise<PDFDocumentProxy> {
     return await getDocument(createSource(path)).promise;
 }
 
-function createSource(path: string) {
+function createSource(path: string): DocumentInitParameters {
     return {url: path, verbosity: VerbosityLevel.ERRORS};
 }
