@@ -1,6 +1,6 @@
 import {ParsedOutput, ParsedTransaction} from '..';
+import {sanitizeNumberString} from '../augments/string';
 import {createStatementParser} from '../parser-base/statement-parser';
-import {sanitizeNumberString} from '../util/string';
 
 enum State {
     Header = 'header',

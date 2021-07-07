@@ -1,5 +1,5 @@
+import {flatten2dArray} from '../augments/array';
 import {readPdf} from '../readPdf';
-import {flatten2dArray} from '../util/array';
 import {ParsedOutput} from './parsed-output';
 import {ParseFunction, ParseFunctionInputs} from './parser-function';
 import {

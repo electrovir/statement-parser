@@ -1,5 +1,5 @@
+import {IfEquals} from '../augments/type';
 import {DEBUG} from '../config';
-import {IfEquals} from '../util/type';
 import {InitOutput, ParsedOutput} from './parsed-output';
 import {
     BaseParserOptions,
