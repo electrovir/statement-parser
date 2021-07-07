@@ -31,9 +31,6 @@
     },
     "main": "dist/src/index.js",
     "typings": "dist/src/index.d.ts",
-    "bin": {
-        "s-parse": "dist/src/cli.js"
-    },
     "scripts": {
         "compile": "rm -rf dist && tsc && chmod +x dist/src/cli.js",
         "format": "prettier --ignore-path .gitignore --write  \"./**/*.{ts,json}\"",
