@@ -79,8 +79,11 @@ export function createStatementParser<
         return output;
     };
 
-    return {
+    const returnValue: Readonly<StatementParser<OutputType, ParserOptions>> = {
         parser,
         keywords: inputs.parserKeywords,
+        ...(inputs.defaultParserOptions ? {defaultParserOptions: inputs.defaultParserOptions} : {}),
     };
+
+    return returnValue;
 }

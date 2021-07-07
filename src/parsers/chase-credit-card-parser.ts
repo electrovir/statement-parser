@@ -32,7 +32,9 @@ export type ChaseCreditCardParsingOptions = {
     includeMultiLineDescriptions: boolean;
 };
 
-const defaultParserOptions: Required<Readonly<ChaseCreditCardParsingOptions>> = {
+export const defaultChaseCreditCardParserOptions: Required<
+    Readonly<ChaseCreditCardParsingOptions>
+> = {
     includeMultiLineDescriptions: true,
 };
 
@@ -49,7 +51,7 @@ export const chaseCreditCardParser = createStatementParser<
     next: nextState,
     initialState: State.Header,
     endState: State.End,
-    defaultParserOptions,
+    defaultParserOptions: defaultChaseCreditCardParserOptions,
     parserKeywords: getEnumTypedValues(ChaseParsingTriggers),
 });
 
