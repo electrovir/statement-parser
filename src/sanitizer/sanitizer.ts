@@ -1,10 +1,11 @@
 import {flatten2dArray} from '../augments/array';
-import {allIndexesOf, replaceStringAtIndex} from '../augments/string';
+import {allIndexesOf, getLength, replaceStringAtIndex} from '../augments/string';
+import {ParserKeyword} from '../parser/parser-options';
 import {readPdf} from '../parser/read-pdf';
 
 export async function sanitizePdf(
     filePath: string,
-    phrasesToPreserve: string[] = [],
+    phrasesToPreserve: ParserKeyword[] = [],
     caseSensitive = false,
     pdfReader: (filePath: string) => string[][] | Promise<string[][]> = (filePath) =>
         readPdf(filePath),
@@ -18,7 +19,7 @@ export async function sanitizePdf(
 
 export function sanitizeStatementText(
     text: string[],
-    phrasesToPreserve: string[] = [],
+    phrasesToPreserve: ParserKeyword[] = [],
     caseSensitive = false,
 ): string[] {
     // star at a's char code -1 so that the first line replacement happens with 'a'
@@ -75,17 +76,21 @@ export function sanitizeStatementText(
                 return currentLetter;
             });
         const keywordsIncludedLine = phrasesToPreserve.reduce(
-            (wholeString, currentKeyword, index) => {
+            (wholeString: string, currentKeyword, index) => {
                 const indexesInOriginalLine = indexes[index];
-                return indexesInOriginalLine.reduce((replaceInHere, indexInOriginalLine) => {
-                    return replaceStringAtIndex(
-                        replaceInHere,
-                        indexMapping[indexInOriginalLine] - 1,
-                        currentKeyword,
-                        indexMapping[indexInOriginalLine + currentKeyword.length] -
-                            indexMapping[indexInOriginalLine],
-                    );
-                }, wholeString);
+                return indexesInOriginalLine.reduce(
+                    (replaceInHere: string, indexInOriginalLine) => {
+                        return replaceStringAtIndex(
+                            replaceInHere,
+                            indexMapping[indexInOriginalLine] - 1,
+                            currentKeyword,
+                            indexMapping[
+                                indexInOriginalLine + getLength(replaceInHere, currentKeyword)
+                            ] - indexMapping[indexInOriginalLine],
+                        );
+                    },
+                    wholeString,
+                );
             },
             cleanedLine,
         );

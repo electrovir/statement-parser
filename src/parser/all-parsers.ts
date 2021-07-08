@@ -27,4 +27,4 @@ export const parsers = {
     [ParserType.PAYPAL]: paypalStatementParser,
     [ParserType.USAA_BANK]: usaaBankAccountStatementParser,
     [ParserType.USAA_CREDIT]: usaaCreditCardStatementParser,
-};
+} as const;

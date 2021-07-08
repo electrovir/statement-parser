@@ -22,3 +22,5 @@ export function collapseDefaultParserOptions<ParserOptions extends object | unde
         ...(inputDefaultParserOptions || {}),
     } as CombineWithBaseParserOptions<ParserOptions>;
 }
+
+export type ParserKeyword = string | RegExp;

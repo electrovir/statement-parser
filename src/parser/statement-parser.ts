@@ -1,6 +1,7 @@
 import {flatten2dArray} from '../augments/array';
 import {ParsedOutput} from './parsed-output';
 import {ParseFunction, ParseFunctionInputs} from './parser-function';
+import {ParserKeyword} from './parser-options';
 import {
     createParserStateMachine,
     CreateStateMachineInput,
@@ -13,7 +14,7 @@ export type StatementParser<
     ParserOptions extends object | undefined = undefined,
 > = {
     parser: ParseFunction<OutputType, ParserOptions>;
-    parserKeywords: (string | RegExp)[];
+    parserKeywords: ParserKeyword[];
 };
 
 export type CreateStatementParserInput<
@@ -24,7 +25,7 @@ export type CreateStatementParserInput<
     pdfProcessing?: (filePath: string) => Promise<string[][]> | string[][];
     outputValidation?: (output: OutputType) => void;
     /** Keywords are used to preserve phrases in the statement text when sanitizing it for a test. */
-    parserKeywords: (string | RegExp)[];
+    parserKeywords: ParserKeyword[];
 } & ParserInitInput<StateType, OutputType, ParserOptions>;
 
 export const createStatementParserInputDefault: Required<
