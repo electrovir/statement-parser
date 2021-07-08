@@ -1,5 +1,5 @@
 import {testGroup} from 'test-vir';
-import {allIndexesOf, escapeForRegExp, getLength, replaceStringAtIndex} from './string';
+import {allIndexesOf, escapeForRegExp, replaceStringAtIndex} from './string';
 
 testGroup({
     description: allIndexesOf.name,
@@ -132,51 +132,6 @@ testGroup({
             description: 'escaped text works as a RegExp',
             test: () => {
                 return '[*.*]'.match(new RegExp(escapeForRegExp('[*.*]')));
-            },
-        });
-    },
-});
-
-testGroup({
-    description: getLength.name,
-    tests: (runTest) => {
-        runTest({
-            expect: 5,
-            description: 'matches length of string',
-            test: () => {
-                return getLength('hello there', 'there');
-            },
-        });
-
-        runTest({
-            expect: 5,
-            description: 'matches length of simple RegExp',
-            test: () => {
-                return getLength('hello there', /there/);
-            },
-        });
-
-        runTest({
-            expect: 5,
-            description: 'matches length of more complex RegExp',
-            test: () => {
-                return getLength('hello there timmy', /t\S+/);
-            },
-        });
-
-        runTest({
-            expect: 11,
-            description: 'returns string length even when string is missing',
-            test: () => {
-                return getLength('hello there', 'abracadabra');
-            },
-        });
-
-        runTest({
-            expect: 0,
-            description: 'returns 0 when RegExp is missing',
-            test: () => {
-                return getLength('hello there', /abracadabra/);
             },
         });
     },

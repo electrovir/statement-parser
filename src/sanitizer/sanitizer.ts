@@ -1,5 +1,5 @@
 import {flatten2dArray} from '../augments/array';
-import {allIndexesOf, getLength, replaceStringAtIndex} from '../augments/string';
+import {allIndexesOf, replaceStringAtIndex} from '../augments/string';
 import {ParserKeyword} from '../parser/parser-options';
 import {readPdf} from '../parser/read-pdf';
 
@@ -32,61 +32,74 @@ export function sanitizeStatementText(
         });
         const indexMapping = Array.from(line).map((_, index) => index);
 
-        const cleanedLine = line
-            .replace(/\d+/g, (match, matchIndex) => {
-                let previousIndexToCheck = matchIndex - 1;
-                if (previousIndexToCheck < 0) {
-                    previousIndexToCheck = 0;
-                }
-                const newIndex = indexMapping[previousIndexToCheck] + 1;
+        const cleanedLine = line.replace(
+            /(?:\d+|(?:[^\d\s\W]?[',]?[^\d\s\W])+|\s+)/g,
+            (match, matchIndexInString) => {
+                let previousIndexToCheck = matchIndexInString - 1;
+                const newIndex =
+                    previousIndexToCheck < 0 ? 0 : indexMapping[previousIndexToCheck] + 1;
 
+                let replacement: string;
+
+                // the match is only whitespace
+                if (!match.trim()) {
+                    replacement = match;
+                }
+                // the match is only numbers
+                else if (!isNaN(Number(match))) {
+                    currentNumber++;
+                    if (currentNumber > 9) {
+                        currentNumber = 0;
+                    }
+
+                    replacement = String(currentNumber);
+                }
+                // the match is text
+                else {
+                    currentLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1);
+                    if (currentLetter.charCodeAt(0) > 'z'.charCodeAt(0)) {
+                        currentLetter = String.fromCharCode('a'.charCodeAt(0));
+                    }
+
+                    replacement = currentLetter;
+                }
+
+                // map all the indexes from the match to the replacement
                 Array.from(match).forEach((_, letterIndex) => {
-                    indexMapping[matchIndex + letterIndex] = newIndex;
+                    indexMapping[matchIndexInString + letterIndex] =
+                        newIndex +
+                        (replacement[letterIndex] ? letterIndex : replacement.length - 1);
                 });
-                indexMapping.slice(matchIndex + match.length).forEach((_, index) => {
-                    indexMapping[matchIndex + match.length + index] = newIndex + 1;
-                });
-
-                currentNumber++;
-                if (currentNumber > 9) {
-                    currentNumber = 0;
-                }
-
-                return String(currentNumber);
-            })
-            .replace(/(?:[^\d\s\W]?[',]?[^\d\s\W])+/g, (match, matchIndex) => {
-                let previousIndexToCheck = matchIndex - 1;
-                if (previousIndexToCheck < 0) {
-                    previousIndexToCheck = 0;
-                }
-                const newIndex = indexMapping[previousIndexToCheck] + 1;
-
-                Array.from(match).forEach((_, letterIndex) => {
-                    indexMapping[matchIndex + letterIndex] = newIndex;
-                });
-                indexMapping.slice(matchIndex + match.length).forEach((_, index) => {
-                    indexMapping[matchIndex + match.length + index] = newIndex + 1;
+                // map all the index mappings that follow the remapped indexes above
+                indexMapping.slice(matchIndexInString + match.length).forEach((_, index) => {
+                    indexMapping[matchIndexInString + match.length + index] =
+                        newIndex + replacement.length;
                 });
 
-                currentLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1);
-                if (currentLetter.charCodeAt(0) > 'z'.charCodeAt(0)) {
-                    currentLetter = String.fromCharCode('a'.charCodeAt(0));
-                }
-
-                return currentLetter;
-            });
+                return replacement;
+            },
+        );
         const keywordsIncludedLine = phrasesToPreserve.reduce(
             (wholeString: string, currentKeyword, index) => {
                 const indexesInOriginalLine = indexes[index];
                 return indexesInOriginalLine.reduce(
                     (replaceInHere: string, indexInOriginalLine) => {
+                        const currentKeywordMatch =
+                            currentKeyword instanceof RegExp
+                                ? line.slice(indexInOriginalLine).match(currentKeyword)?.[0]
+                                : currentKeyword;
+                        if (currentKeywordMatch == undefined) {
+                            throw new Error(
+                                `"${currentKeywordMatch}" was found in "${line}" initially but wasn't later!??`,
+                            );
+                        }
+
                         return replaceStringAtIndex(
                             replaceInHere,
-                            indexMapping[indexInOriginalLine] - 1,
-                            currentKeyword,
-                            indexMapping[
-                                indexInOriginalLine + getLength(replaceInHere, currentKeyword)
-                            ] - indexMapping[indexInOriginalLine],
+                            indexMapping[indexInOriginalLine],
+                            currentKeywordMatch,
+                            indexMapping[indexInOriginalLine + currentKeywordMatch.length] -
+                                indexMapping[indexInOriginalLine],
                         );
                     },
                     wholeString,

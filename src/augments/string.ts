@@ -19,32 +19,23 @@ export function allIndexesOf(
 
     const indexes: number[] = [];
 
-    searchIn.replace(searchFor, (_, matchIndex) => {
+    searchIn.replace(searchFor, (match, matchIndex) => {
         indexes.push(matchIndex);
-        return '';
+        /**
+         * Don't actually change any text. What we do here doesn't matter because we're not using
+         * the output of the .replace method, we're just producing side effects.
+         */
+        return match;
     });
 
     return indexes;
 }
 
-export function getLength(matchIn: string, matchFor: string | RegExp): number {
-    if (matchFor instanceof RegExp) {
-        const match = matchIn.match(matchFor);
-        if (match) {
-            return match[0].length;
-        } else {
-            return 0;
-        }
-    } else {
-        return matchFor.length;
-    }
-}
-
 export function replaceStringAtIndex(
     originalString: string,
     start: number,
-    newString: string | RegExp,
-    length = getLength(originalString, newString),
+    newString: string,
+    length = newString.length,
 ): string {
     const before = originalString.substring(0, start);
     const after = originalString.substring(start + length);

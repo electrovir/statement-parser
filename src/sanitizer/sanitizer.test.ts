@@ -65,4 +65,23 @@ testGroup((runTest) => {
             return sanitized;
         },
     });
+
+    runTest({
+        description: 'should work with RegExp keywords',
+        expect: trimArray(
+            `
+                a account number: 0-1-2
+                $3  super secret purchase g h i j k
+                $4  l m n 5
+            `.split('\n'),
+        ),
+        test: () => {
+            const sanitized = sanitizeStatementText(unSanitized, [
+                ...keywords,
+                /super \S+ purchase/,
+            ]);
+
+            return sanitized;
+        },
+    });
 });
