@@ -1,6 +1,6 @@
 import {IfEquals} from '../augments/type';
-import {DEBUG} from '../config';
 import {InitOutput, ParsedOutput} from './parsed-output';
+import {ParseFunctionInputs} from './parser-function';
 import {
     BaseParserOptions,
     collapseDefaultParserOptions,
@@ -41,10 +41,7 @@ export type CreateStateMachineInput<
     StateType,
     OutputType extends ParsedOutput,
     ParserOptions extends object | undefined = undefined,
-> = ParserInitInput<StateType, OutputType, ParserOptions> & {
-    filePath: string;
-    inputParserOptions?: Partial<CombineWithBaseParserOptions<ParserOptions>>;
-};
+> = ParserInitInput<StateType, OutputType, ParserOptions> & ParseFunctionInputs<ParserOptions>;
 
 export type StateMachineParserFunction<OutputType extends ParsedOutput> = (
     inputs: Readonly<string[]>,
@@ -70,6 +67,7 @@ export function createParserStateMachine<
     initOutput,
     inputParserOptions,
     defaultParserOptions,
+    debug = false,
 }: Readonly<
     CreateStateMachineInput<StateType, OutputType, ParserOptions>
 >): StateMachineParserFunction<OutputType> {
@@ -105,7 +103,7 @@ export function createParserStateMachine<
             const nextInput = iterator.next();
 
             if (nextInput.done) {
-                if (DEBUG) {
+                if (debug) {
                     console.error(output);
                 }
                 throw new Error(
@@ -115,7 +113,7 @@ export function createParserStateMachine<
 
             const input: string = nextInput.value;
 
-            if (DEBUG) {
+            if (debug) {
                 console.log(`state: "${state}", input: "${input}"`);
             }
             try {
@@ -129,7 +127,7 @@ export function createParserStateMachine<
 
         if (!output.accountSuffix) {
             const message = `Parse completed without filling in account suffix on ${output.filePath}`;
-            if (DEBUG) {
+            if (debug) {
                 console.error(output);
             }
             console.error(message);

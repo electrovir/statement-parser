@@ -1,7 +1,7 @@
-import {getEnumTypedValues} from '../augments/object';
-import {collapseSpaces, sanitizeNumberString} from '../augments/string';
-import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {createStatementParser} from '../parser-base/statement-parser';
+import {getEnumTypedValues} from '../../augments/object';
+import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
+import {ParsedOutput, ParsedTransaction} from '../parsed-output';
+import {createStatementParser} from '../statement-parser';
 
 enum State {
     Header = 'header',

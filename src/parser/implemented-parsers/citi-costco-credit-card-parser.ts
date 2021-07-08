@@ -1,12 +1,12 @@
 import {parsePageItems} from 'pdf-text-reader';
-import {dateFromSlashFormat, dateWithinRange} from '../augments/date';
-import {getEnumTypedValues} from '../augments/object';
-import {collapseSpaces, sanitizeNumberString} from '../augments/string';
-import {Overwrite} from '../augments/type';
-import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {CombineWithBaseParserOptions} from '../parser-base/parser-options';
-import {createStatementParser} from '../parser-base/statement-parser';
-import {getPdfDocument} from '../readPdf';
+import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
+import {getEnumTypedValues} from '../../augments/object';
+import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
+import {Overwrite} from '../../augments/type';
+import {ParsedOutput, ParsedTransaction} from '../parsed-output';
+import {CombineWithBaseParserOptions} from '../parser-options';
+import {getPdfDocument} from '../read-pdf';
+import {createStatementParser} from '../statement-parser';
 
 enum State {
     Header = 'header',

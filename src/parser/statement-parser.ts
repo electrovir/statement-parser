@@ -1,5 +1,4 @@
 import {flatten2dArray} from '../augments/array';
-import {readPdf} from '../readPdf';
 import {ParsedOutput} from './parsed-output';
 import {ParseFunction, ParseFunctionInputs} from './parser-function';
 import {
@@ -7,13 +6,14 @@ import {
     CreateStateMachineInput,
     ParserInitInput,
 } from './parser-state-machine';
+import {readPdf} from './read-pdf';
 
 export type StatementParser<
     OutputType extends ParsedOutput,
     ParserOptions extends object | undefined = undefined,
 > = {
     parser: ParseFunction<OutputType, ParserOptions>;
-    keywords: (string | RegExp)[];
+    parserKeywords: (string | RegExp)[];
 };
 
 export type CreateStatementParserInput<
@@ -49,7 +49,8 @@ export function createStatementParser<
 
     const parser: ParseFunction<OutputType, ParserOptions> = async ({
         filePath,
-        parserOptions,
+        inputParserOptions,
+        debug,
     }: Readonly<ParseFunctionInputs<ParserOptions>>) => {
         if (!inputs.pdfProcessing) {
             throw new Error('Missing pdf processing method');
@@ -63,7 +64,8 @@ export function createStatementParser<
             // ParserInitInput is a subtype of inputs' type
             ...(inputs as ParserInitInput<StateType, OutputType, ParserOptions>),
             filePath,
-            inputParserOptions: parserOptions,
+            debug,
+            inputParserOptions,
         };
 
         const runStateMachine = createParserStateMachine<StateType, OutputType, ParserOptions>(
@@ -81,7 +83,7 @@ export function createStatementParser<
 
     const returnValue: Readonly<StatementParser<OutputType, ParserOptions>> = {
         parser,
-        keywords: inputs.parserKeywords,
+        parserKeywords: inputs.parserKeywords,
         ...(inputs.defaultParserOptions ? {defaultParserOptions: inputs.defaultParserOptions} : {}),
     };
 

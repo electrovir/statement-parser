@@ -1,9 +1,9 @@
-import {dateFromSlashFormat, dateWithinRange} from '../augments/date';
-import {getEnumTypedValues} from '../augments/object';
-import {collapseSpaces, sanitizeNumberString} from '../augments/string';
-import {ParsedOutput, ParsedTransaction} from '../parser-base/parsed-output';
-import {CombineWithBaseParserOptions} from '../parser-base/parser-options';
-import {createStatementParser} from '../parser-base/statement-parser';
+import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
+import {getEnumTypedValues} from '../../augments/object';
+import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
+import {ParsedOutput, ParsedTransaction} from '../parsed-output';
+import {CombineWithBaseParserOptions} from '../parser-options';
+import {createStatementParser} from '../statement-parser';
 
 enum State {
     PageHeader = 'header',

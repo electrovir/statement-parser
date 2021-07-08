@@ -1,4 +1,21 @@
+import {flatten2dArray} from '../augments/array';
 import {allIndexesOf, replaceStringAtIndex} from '../augments/string';
+import {readPdf} from '../parser/read-pdf';
+
+export async function sanitizePdf(
+    filePath: string,
+    phrasesToPreserve: string[] = [],
+    caseSensitive = false,
+    pdfReader: (filePath: string) => string[][] | Promise<string[][]> = (filePath) =>
+        readPdf(filePath),
+): Promise<string[]> {
+    return sanitizeStatementText(
+        flatten2dArray(await pdfReader(filePath)),
+        phrasesToPreserve,
+        caseSensitive,
+    );
+}
+
 export function sanitizeStatementText(
     text: string[],
     phrasesToPreserve: string[] = [],
