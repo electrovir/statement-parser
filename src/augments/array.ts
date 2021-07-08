@@ -1,8 +1,9 @@
-export function flatten2dArray(pages: string[][]): string[] {
-    const lines: string[] = pages.reduce(
-        (accum: string[], pageLines) => accum.concat(pageLines),
-        [],
-    );
+export function flatten2dArray<T>(pages: T[][]): T[] {
+    const flattened: T[] = pages.reduce((accum: T[], row) => accum.concat(row), []);
 
-    return lines;
+    return flattened;
+}
+
+export function trimArray(input: string[]): string[] {
+    return input.map((line) => line.trim()).filter((line) => line !== '');
 }

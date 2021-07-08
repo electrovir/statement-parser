@@ -42,7 +42,8 @@
     },
     "dependencies": {
         "pdf-text-reader": "^2.0.2",
-        "pdfjs-dist": "^2.8.335"
+        "pdfjs-dist": "^2.8.335",
+        "test-vir": "^0.0.14"
     },
     "devDependencies": {
         "@types/node": "^16.0.0",
