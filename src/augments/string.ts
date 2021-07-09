@@ -1,3 +1,4 @@
+import {deDupeFlags} from './regexp';
 export function collapseSpaces(input: string): string {
     return input.trim().replace(/\s{2,}/g, ' ');
 }
@@ -14,7 +15,10 @@ export function allIndexesOf(
     const regExpFlags: string = `g${caseInsensitive ? 'i' : ''}`;
     const searchFor: RegExp =
         searchForInput instanceof RegExp
-            ? new RegExp(searchForInput.source, `${searchForInput.flags}${regExpFlags}`)
+            ? new RegExp(
+                  searchForInput.source,
+                  deDupeFlags(`${searchForInput.flags}${regExpFlags}`),
+              )
             : new RegExp(escapeForRegExp(searchForInput), regExpFlags);
 
     const indexes: number[] = [];
