@@ -2,7 +2,7 @@ import {parsers, ParserType} from './all-parsers';
 import {ParsedOutput} from './parsed-output';
 
 export type StatementPdf<SelectedParser extends ParserType = ParserType> = {
-    parserInput: Parameters<typeof parsers[SelectedParser]['parser']>[0];
+    parserInput: Parameters<typeof parsers[SelectedParser]['parsePdf']>[0];
     type: SelectedParser;
 };
 
@@ -19,7 +19,7 @@ export async function parsePdfs(
         pdfs.map(async (pdf) => {
             return {
                 ...pdf,
-                data: await parsers[pdf.type].parser({
+                data: await parsers[pdf.type].parsePdf({
                     debug,
                     ...pdf.parserInput,
                 }),

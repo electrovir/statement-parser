@@ -1,6 +1,11 @@
 import {flatten2dArray} from '../augments/array';
 import {ParsedOutput} from './parsed-output';
-import {ParseFunction, ParseFunctionInputs} from './parser-function';
+import {
+    ParsePdfFunction,
+    ParsePdfFunctionInput,
+    ParseTextFunction,
+    ParseTextFunctionInput,
+} from './parser-function';
 import {ParserKeyword} from './parser-options';
 import {
     createParserStateMachine,
@@ -9,11 +14,15 @@ import {
 } from './parser-state-machine';
 import {readPdf} from './read-pdf';
 
+export type ConvertPdfToTextFunction = (filePath: string) => Promise<string[]>;
+
 export type StatementParser<
     OutputType extends ParsedOutput,
     ParserOptions extends object | undefined = undefined,
 > = {
-    parser: ParseFunction<OutputType, ParserOptions>;
+    parsePdf: ParsePdfFunction<OutputType, ParserOptions>;
+    parseText: ParseTextFunction<OutputType, ParserOptions>;
+    convertPdfToText: (filePath: string) => Promise<string[]>;
     parserKeywords: ParserKeyword[];
 };
 
@@ -48,32 +57,33 @@ export function createStatementParser<
         ...rawInputs,
     };
 
-    const parser: ParseFunction<OutputType, ParserOptions> = async ({
-        filePath,
-        inputParserOptions,
-        debug,
-    }: Readonly<ParseFunctionInputs<ParserOptions>>) => {
-        if (!inputs.pdfProcessing) {
-            throw new Error('Missing pdf processing method');
-        }
-        const pdfPages = await inputs.pdfProcessing(filePath);
-        const statementLines = flatten2dArray(pdfPages);
+    const pdfProcessing = inputs.pdfProcessing;
 
+    if (!pdfProcessing) {
+        throw new Error('Missing pdf processing method');
+    }
+
+    const parseText: ParseTextFunction<OutputType, ParserOptions> = ({
+        textLines,
+        parserOptions: inputParserOptions,
+        debug,
+        name,
+    }: ParseTextFunctionInput<ParserOptions>) => {
         const stateMachineInputs: Readonly<
             CreateStateMachineInput<StateType, OutputType, ParserOptions>
         > = {
             // ParserInitInput is a subtype of inputs' type
             ...(inputs as ParserInitInput<StateType, OutputType, ParserOptions>),
-            filePath,
+            name,
             debug,
-            inputParserOptions,
+            parserOptions: inputParserOptions,
         };
 
         const runStateMachine = createParserStateMachine<StateType, OutputType, ParserOptions>(
             stateMachineInputs,
         );
 
-        const output = runStateMachine(statementLines);
+        const output = runStateMachine(textLines);
 
         if (inputs.outputValidation) {
             inputs.outputValidation(output);
@@ -82,10 +92,40 @@ export function createStatementParser<
         return output;
     };
 
+    const convertPdfToText: ConvertPdfToTextFunction = async (
+        filePath: string,
+    ): Promise<string[]> => {
+        const pdfPages = await pdfProcessing(filePath);
+        const textLines = flatten2dArray(pdfPages);
+
+        return textLines;
+    };
+
+    const parsePdf: ParsePdfFunction<OutputType, ParserOptions> = async ({
+        filePath,
+        parserOptions: inputParserOptions,
+        debug,
+    }: Readonly<ParsePdfFunctionInput<ParserOptions>>) => {
+        const textLines = await convertPdfToText(filePath);
+
+        return parseText({
+            parserOptions: inputParserOptions,
+            debug,
+            name: filePath,
+            textLines,
+        });
+    };
+
+    const defaultParserOptionsWrapper = inputs.defaultParserOptions
+        ? {defaultParserOptions: inputs.defaultParserOptions}
+        : {};
+
     const returnValue: Readonly<StatementParser<OutputType, ParserOptions>> = {
-        parser,
+        parsePdf,
+        parseText,
+        convertPdfToText,
         parserKeywords: inputs.parserKeywords,
-        ...(inputs.defaultParserOptions ? {defaultParserOptions: inputs.defaultParserOptions} : {}),
+        ...defaultParserOptionsWrapper,
     };
 
     return returnValue;

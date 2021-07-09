@@ -20,7 +20,7 @@ export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
     incomes: T[];
     expenses: T[];
     accountSuffix: string;
-    filePath: string;
+    name?: string;
     yearPrefix: number;
     startDate?: Date;
     endDate?: Date;

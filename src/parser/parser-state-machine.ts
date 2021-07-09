@@ -1,6 +1,6 @@
 import {IfEquals} from '../augments/type';
 import {InitOutput, ParsedOutput} from './parsed-output';
-import {ParseFunctionInputs} from './parser-function';
+import {SharedParserFunctionInputs} from './parser-function';
 import {
     BaseParserOptions,
     collapseDefaultParserOptions,
@@ -41,7 +41,8 @@ export type CreateStateMachineInput<
     StateType,
     OutputType extends ParsedOutput,
     ParserOptions extends object | undefined = undefined,
-> = ParserInitInput<StateType, OutputType, ParserOptions> & ParseFunctionInputs<ParserOptions>;
+> = ParserInitInput<StateType, OutputType, ParserOptions> &
+    SharedParserFunctionInputs<ParserOptions>;
 
 export type StateMachineParserFunction<OutputType extends ParsedOutput> = (
     inputs: Readonly<string[]>,
@@ -63,9 +64,9 @@ export function createParserStateMachine<
     next,
     initialState,
     endState,
-    filePath,
+    name,
     initOutput,
-    inputParserOptions,
+    parserOptions: inputParserOptions,
     defaultParserOptions,
     debug = false,
 }: Readonly<
@@ -74,6 +75,8 @@ export function createParserStateMachine<
     return (inputs: Readonly<string[]>): Readonly<OutputType> => {
         let state: StateType = initialState;
         let iterator = inputs[Symbol.iterator]();
+
+        const errorName = name ?? `${inputs[0].substring(0, 10)}...`;
 
         const defaultOptions: CombineWithBaseParserOptions<ParserOptions> =
             collapseDefaultParserOptions(defaultParserOptions);
@@ -86,7 +89,7 @@ export function createParserStateMachine<
         const startingOutput: ParsedOutput = {
             incomes: [],
             expenses: [],
-            filePath,
+            name,
             yearPrefix: parserOptions.yearPrefix,
             accountSuffix: '',
             endDate: undefined,
@@ -106,9 +109,7 @@ export function createParserStateMachine<
                 if (debug) {
                     console.error(output);
                 }
-                throw new Error(
-                    `Reached end of input before hitting end state on ${output.filePath}`,
-                );
+                throw new Error(`Reached end of input before hitting end state on "${errorName}"`);
             }
 
             const input: string = nextInput.value;
@@ -120,13 +121,13 @@ export function createParserStateMachine<
                 output = action(state, input, output, parserOptions);
                 state = next(state, input);
             } catch (error) {
-                error.message += ` in file: ${filePath}`;
+                error.message += ` in: "${errorName}"`;
                 throw error;
             }
         }
 
         if (!output.accountSuffix) {
-            const message = `Parse completed without filling in account suffix on ${output.filePath}`;
+            const message = `Parse completed without filling in account suffix on "${errorName}"`;
             if (debug) {
                 console.error(output);
             }
