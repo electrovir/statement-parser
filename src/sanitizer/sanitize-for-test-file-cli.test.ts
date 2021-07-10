@@ -49,38 +49,38 @@ testGroup((runTest) => {
             errorMessage: CliErrors.MissingPdfPath,
         },
         description: 'api rejects missing PDF file path',
-        test: testTempOutputFile([ParserType.PAYPAL]),
+        test: testTempOutputFile([ParserType.Paypal]),
     });
     runTest({
         expectError: {
             errorMessage: CliErrors.InvalidPdfPath('missing-file'),
         },
         description: 'api rejects invalid PDF file path',
-        test: testTempOutputFile([ParserType.PAYPAL, 'missing-file']),
+        test: testTempOutputFile([ParserType.Paypal, 'missing-file']),
     });
     runTest({
         expectError: {
             errorMessage: CliErrors.PdfPathNoExist('missing-file.pdf'),
         },
         description: 'api rejects PDF file path that is not on disk',
-        test: testTempOutputFile([ParserType.PAYPAL, 'missing-file.pdf']),
+        test: testTempOutputFile([ParserType.Paypal, 'missing-file.pdf']),
     });
     runTest({
         expectError: {
             errorMessage: CliErrors.MissingOutputFileName,
         },
         description: 'api rejects missing output file name',
-        test: testTempOutputFile([ParserType.PAYPAL, dummyPdfPath]),
+        test: testTempOutputFile([ParserType.Paypal, dummyPdfPath]),
     });
     runTest({
         expectError: {
             errorMessage: CliErrors.InvalidOutputFileName('output-file'),
         },
         description: 'api rejects invalid output file name',
-        test: testTempOutputFile([ParserType.PAYPAL, dummyPdfPath, 'output-file']),
+        test: testTempOutputFile([ParserType.Paypal, dummyPdfPath, 'output-file']),
     });
     runTest({
         description: 'tests dummy pdf file',
-        test: testTempOutputFile([ParserType.PAYPAL, dummyPdfPath, 'temp/dummy-output-file.json']),
+        test: testTempOutputFile([ParserType.Paypal, dummyPdfPath, 'temp/dummy-output-file.json']),
     });
 });

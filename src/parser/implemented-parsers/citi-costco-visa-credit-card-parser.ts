@@ -31,7 +31,7 @@ const billingPeriodRegExp = new RegExp(
 
 const accountNumberRegExp = new RegExp(`${ParsingTriggers.AccountNumber}\\s+(\\S+)\\s*$`, 'i');
 
-type CitiCostcoCreditIntermediateTransaction = Overwrite<
+type CitiCostcoVisaCreditIntermediateTransaction = Overwrite<
     ParsedTransaction,
     {
         amount: number | undefined;
@@ -42,17 +42,17 @@ type CitiCostcoCreditIntermediateTransaction = Overwrite<
  * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
  *   For 1991, use 19.
  */
-export const citiCostcoCreditCardParser = createStatementParser<State, ParsedOutput>({
+export const citiCostcoVisaCreditCardParser = createStatementParser<State, ParsedOutput>({
     action: performStateAction,
     next: nextState,
     initialState: State.Header,
     endState: State.End,
     parserKeywords: getEnumTypedValues(ParsingTriggers),
-    pdfProcessing: readCitiCostcoPdf,
+    pdfProcessing: readCitiCostcoVisaPdf,
     outputValidation: outputValidation,
 });
 
-async function readCitiCostcoPdf(path: string): Promise<string[][]> {
+async function readCitiCostcoVisaPdf(path: string): Promise<string[][]> {
     const doc = await getPdfDocument(path);
     const pageCount = doc.numPages;
 
@@ -123,7 +123,7 @@ function parseTransactionLine(
     line: string,
     output: ParsedOutput,
     negate: boolean,
-): string | number | CitiCostcoCreditIntermediateTransaction {
+): string | number | CitiCostcoVisaCreditIntermediateTransaction {
     if (!output.startDate || !output.endDate) {
         throw new Error(
             `Tried to parse a transaction but no start date (${output.startDate}) or end date (${output.endDate}) were found yet`,
@@ -136,7 +136,7 @@ function parseTransactionLine(
 
     if (transactionMatch) {
         const [, monthString, dayString, description, amountString] = transactionMatch;
-        const transaction: CitiCostcoCreditIntermediateTransaction = {
+        const transaction: CitiCostcoVisaCreditIntermediateTransaction = {
             date: dateWithinRange(
                 output.startDate,
                 output.endDate,
@@ -181,7 +181,7 @@ function performStateAction(
         const array = currentState === State.Purchase ? output.expenses : output.incomes;
 
         const lineParse = parseTransactionLine(line, output, currentState === State.Payment);
-        const lastTransaction: CitiCostcoCreditIntermediateTransaction | undefined =
+        const lastTransaction: CitiCostcoVisaCreditIntermediateTransaction | undefined =
             array[array.length - 1];
 
         if (typeof lineParse === 'string') {
