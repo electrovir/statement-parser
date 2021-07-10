@@ -1,8 +1,9 @@
-import {parsers, ParserType} from './all-parsers';
+import {AllParserOptions, parsers, ParserType} from './all-parsers';
 import {ParsedOutput} from './parsed-output';
+import {ParsePdfFunctionInput} from './parser-function';
 
 export type StatementPdf<SelectedParser extends ParserType = ParserType> = {
-    parserInput: Parameters<typeof parsers[SelectedParser]['parsePdf']>[0];
+    parserInput: ParsePdfFunctionInput<AllParserOptions[SelectedParser]>;
     type: SelectedParser;
 };
 
