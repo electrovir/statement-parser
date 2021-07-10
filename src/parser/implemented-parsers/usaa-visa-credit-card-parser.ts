@@ -26,12 +26,12 @@ enum ParsingTriggers {
     StatementClosingDate = 'statement closing date',
 }
 
-export type UsaaCreditCardTransaction = ParsedTransaction & {
+export type UsaaVisaCreditCardTransaction = ParsedTransaction & {
     postDate: Date;
     referenceNumber: string;
 };
 
-export type UsaaCreditOutput = ParsedOutput<UsaaCreditCardTransaction>;
+export type UsaaVisaCreditOutput = ParsedOutput<UsaaVisaCreditCardTransaction>;
 
 const tableHeadersRegExp = /^trans date\s*post date/i;
 const creditsEndRegExp = /^\s*total transactions for/i;
@@ -45,24 +45,29 @@ const closingDateRegExp = new RegExp(
 );
 const feesRegExp = /^\s*fees\s*$/;
 
-export const usaaCreditCardStatementParser = createStatementParser<State, UsaaCreditOutput>({
-    action: performStateAction,
-    next: nextState,
-    initialState: State.Header,
-    endState: State.End,
-    parserKeywords: [
-        ...getEnumTypedValues(ParsingTriggers),
-        tableHeadersRegExp,
-        creditsEndRegExp,
-        closingDateRegExp,
-        feesRegExp,
-    ],
-});
+export const usaaVisaCreditCardStatementParser = createStatementParser<State, UsaaVisaCreditOutput>(
+    {
+        action: performStateAction,
+        next: nextState,
+        initialState: State.Header,
+        endState: State.End,
+        parserKeywords: [
+            ...getEnumTypedValues(ParsingTriggers),
+            tableHeadersRegExp,
+            creditsEndRegExp,
+            closingDateRegExp,
+            feesRegExp,
+        ],
+    },
+);
 
 const transactionRegex =
     /^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
 
-function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTransaction | string {
+function processTransactionLine(
+    line: string,
+    endDate: Date,
+): UsaaVisaCreditCardTransaction | string {
     const match = line.match(transactionRegex);
     if (match) {
         const [, transactionDate, postDate, referenceNumber, description, amount] = match;
@@ -88,7 +93,7 @@ function processTransactionLine(line: string, endDate: Date): UsaaCreditCardTran
 function performStateAction(
     currentState: State,
     line: string,
-    output: UsaaCreditOutput,
+    output: UsaaVisaCreditOutput,
     parserOptions: CombineWithBaseParserOptions,
 ) {
     if (

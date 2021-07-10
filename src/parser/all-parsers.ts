@@ -10,9 +10,9 @@ import {
     UsaaBankOutput,
 } from './implemented-parsers/usaa-bank-account-parser';
 import {
-    usaaCreditCardStatementParser,
-    UsaaCreditOutput,
-} from './implemented-parsers/usaa-credit-card-parser';
+    usaaVisaCreditCardStatementParser,
+    UsaaVisaCreditOutput,
+} from './implemented-parsers/usaa-visa-credit-card-parser';
 import {ParsedOutput} from './parsed-output';
 import {BaseParserOptions, CombineWithBaseParserOptions} from './parser-options';
 
@@ -20,7 +20,7 @@ export enum ParserType {
     CHASE_CREDIT = 'chase-credit',
     CITI_COSTCO_CREDIT = 'citi-costco-credit',
     USAA_BANK = 'usaa-bank',
-    USAA_CREDIT = 'usaa-credit',
+    USAA_VISA_CREDIT = 'usaa-visa-credit',
     PAYPAL = 'paypal',
 }
 
@@ -37,7 +37,7 @@ export interface AllParserOptions extends Record<ParserType, Partial<BaseParserO
     [ParserType.CITI_COSTCO_CREDIT]: Partial<BaseParserOptions>;
     [ParserType.PAYPAL]: Partial<BaseParserOptions>;
     [ParserType.USAA_BANK]: Partial<BaseParserOptions>;
-    [ParserType.USAA_CREDIT]: Partial<BaseParserOptions>;
+    [ParserType.USAA_VISA_CREDIT]: Partial<BaseParserOptions>;
 }
 
 export interface AllParserOutput extends Record<ParserType, ParsedOutput> {
@@ -45,7 +45,7 @@ export interface AllParserOutput extends Record<ParserType, ParsedOutput> {
     [ParserType.CITI_COSTCO_CREDIT]: ParsedOutput;
     [ParserType.PAYPAL]: PaypalOutput;
     [ParserType.USAA_BANK]: UsaaBankOutput;
-    [ParserType.USAA_CREDIT]: UsaaCreditOutput;
+    [ParserType.USAA_VISA_CREDIT]: UsaaVisaCreditOutput;
 }
 
 export const parsers = {
@@ -53,7 +53,7 @@ export const parsers = {
     [ParserType.CITI_COSTCO_CREDIT]: citiCostcoCreditCardParser,
     [ParserType.PAYPAL]: paypalStatementParser,
     [ParserType.USAA_BANK]: usaaBankAccountStatementParser,
-    [ParserType.USAA_CREDIT]: usaaCreditCardStatementParser,
+    [ParserType.USAA_VISA_CREDIT]: usaaVisaCreditCardStatementParser,
 } as const;
 
 chaseCreditCardParser.parseText;
