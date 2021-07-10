@@ -13,6 +13,22 @@ testGroup({
         });
 
         runTest({
+            description: 'should find all regex instances in a string',
+            expect: [2, 5, 11, 18, 24, 31],
+            test: () => {
+                return allIndexesOf('who would hocked your thought now?', /o/);
+            },
+        });
+
+        runTest({
+            description: 'should find all RegExp matches with a capture group',
+            expect: [2, 5, 11, 18, 24, 31],
+            test: () => {
+                return allIndexesOf('who would hocked your thought now?', /(o)/);
+            },
+        });
+
+        runTest({
             description: 'should handle substring at the beginning of the string correctly',
             expect: [0, 3],
             test: () => {
