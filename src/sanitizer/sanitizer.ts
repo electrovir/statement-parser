@@ -1,20 +1,11 @@
-import {flatten2dArray} from '../augments/array';
 import {allIndexesOf, replaceStringAtIndex} from '../augments/string';
+import {parsers, ParserType} from '../parser/all-parsers';
 import {ParserKeyword} from '../parser/parser-options';
-import {readPdf} from '../parser/read-pdf';
 
-export async function sanitizePdf(
-    filePath: string,
-    phrasesToPreserve: ParserKeyword[] = [],
-    caseSensitive = false,
-    pdfReader: (filePath: string) => string[][] | Promise<string[][]> = (filePath) =>
-        readPdf(filePath),
-): Promise<string[]> {
-    return sanitizeStatementText(
-        flatten2dArray(await pdfReader(filePath)),
-        phrasesToPreserve,
-        caseSensitive,
-    );
+export async function sanitizePdf(filePath: string, parserType: ParserType): Promise<string[]> {
+    const parser = parsers[parserType];
+
+    return sanitizeStatementText(await parser.convertPdfToText(filePath), parser.parserKeywords);
 }
 
 export function sanitizeStatementText(
