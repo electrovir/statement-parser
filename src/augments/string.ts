@@ -23,13 +23,32 @@ export function allIndexesOf(
 
     const indexes: number[] = [];
 
-    searchIn.replace(searchFor, (match, matchIndex) => {
+    searchIn.replace(searchFor, (...matchResults: (string | number)[]): string => {
+        /**
+         * Grabbing the second to last entry in the array (rather than the second) takes capture
+         * groups into account.
+         */
+        const matchIndex: string | number = matchResults[matchResults.length - 2];
+
+        if (typeof matchIndex !== 'number') {
+            throw new Error(
+                `Match index "${matchIndex}" is not a number. Searching for "${searchForInput}" in "${searchIn}".`,
+            );
+        }
         indexes.push(matchIndex);
+
+        const originalMatch = matchResults[0];
+
+        if (typeof originalMatch !== 'string') {
+            throw new Error(
+                `Original match when searching for "${searchForInput}" in "${searchIn}" at index ${matchIndex} is not a string.`,
+            );
+        }
         /**
          * Don't actually change any text. What we do here doesn't matter because we're not using
          * the output of the .replace method, we're just producing side effects.
          */
-        return match;
+        return originalMatch;
     });
 
     return indexes;
