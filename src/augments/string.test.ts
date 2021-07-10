@@ -8,7 +8,7 @@ testGroup({
             description: 'should find all substring instances in a string',
             expect: [2, 5, 11, 18, 24, 31],
             test: () => {
-                return allIndexesOf('who would hocked your thought now?', 'o');
+                return allIndexesOf('who would hocked your thought now?', 'o', false);
             },
         });
 
@@ -16,7 +16,7 @@ testGroup({
             description: 'should find all regex instances in a string',
             expect: [2, 5, 11, 18, 24, 31],
             test: () => {
-                return allIndexesOf('who would hocked your thought now?', /o/);
+                return allIndexesOf('who would hocked your thought now?', /o/, false);
             },
         });
 
@@ -24,7 +24,7 @@ testGroup({
             description: 'should find all RegExp matches with a capture group',
             expect: [2, 5, 11, 18, 24, 31],
             test: () => {
-                return allIndexesOf('who would hocked your thought now?', /(o)/);
+                return allIndexesOf('who would hocked your thought now?', /(o)/, false);
             },
         });
 
@@ -32,7 +32,7 @@ testGroup({
             description: 'should handle substring at the beginning of the string correctly',
             expect: [0, 3],
             test: () => {
-                return allIndexesOf('a fan is here', 'a');
+                return allIndexesOf('a fan is here', 'a', false);
             },
         });
 
@@ -40,7 +40,7 @@ testGroup({
             description: 'should handle the substring at the end of the string only',
             expect: [10],
             test: () => {
-                return allIndexesOf('boiled eggs', 's');
+                return allIndexesOf('boiled eggs', 's', false);
             },
         });
 
@@ -48,7 +48,7 @@ testGroup({
             description: 'should handle the substring at the end and beginning of the string',
             expect: [0, 8],
             test: () => {
-                return allIndexesOf('some eggs', 's');
+                return allIndexesOf('some eggs', 's', false);
             },
         });
 
@@ -56,7 +56,11 @@ testGroup({
             description: 'should handle longer words',
             expect: [5, 15, 29, 41, 50],
             test: () => {
-                return allIndexesOf('when you go to you to have a you because you like you', 'you');
+                return allIndexesOf(
+                    'when you go to you to have a you because you like you',
+                    'you',
+                    true,
+                );
             },
         });
 
@@ -64,7 +68,7 @@ testGroup({
             description: 'should match multiple in a row',
             expect: [0, 3, 6, 9, 12, 15],
             test: () => {
-                return allIndexesOf('YouYouYouYouYouYou', 'You');
+                return allIndexesOf('YouYouYouYouYouYou', 'You', false);
             },
         });
 
@@ -72,7 +76,7 @@ testGroup({
             description: 'should not match case mismatch',
             expect: [0, 20],
             test: () => {
-                return allIndexesOf('You are not you but You', 'You');
+                return allIndexesOf('You are not you but You', 'You', true);
             },
         });
 
@@ -80,7 +84,7 @@ testGroup({
             description: 'should honor case insensitive set to true',
             expect: [0, 12, 20],
             test: () => {
-                return allIndexesOf('You are not you but You', 'You', true);
+                return allIndexesOf('You are not you but You', 'You', false);
             },
         });
     },

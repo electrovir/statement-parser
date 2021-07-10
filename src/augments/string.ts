@@ -1,4 +1,4 @@
-import {deDupeFlags} from './regexp';
+import {deDupeRegExFlags} from './regexp';
 export function collapseSpaces(input: string): string {
     return input.trim().replace(/\s{2,}/g, ' ');
 }
@@ -10,14 +10,20 @@ export function sanitizeNumberString(input: string): string {
 export function allIndexesOf(
     searchIn: string,
     searchForInput: string | RegExp,
-    caseInsensitive = false,
+    /**
+     * CaseSensitive only applies when the input is a string. Otherwise, the RegExp's "i" flag is
+     * used to determine case sensitivity.
+     */
+    caseSensitive: boolean,
 ): number[] {
-    const regExpFlags: string = `g${caseInsensitive ? 'i' : ''}`;
+    const regExpFlags: string = `g${
+        !caseSensitive && typeof searchForInput === 'string' ? 'i' : ''
+    }`;
     const searchFor: RegExp =
         searchForInput instanceof RegExp
             ? new RegExp(
                   searchForInput.source,
-                  deDupeFlags(`${searchForInput.flags}${regExpFlags}`),
+                  deDupeRegExFlags(`${searchForInput.flags}${regExpFlags}`),
               )
             : new RegExp(escapeForRegExp(searchForInput), regExpFlags);
 
