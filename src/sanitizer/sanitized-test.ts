@@ -5,6 +5,7 @@ import {Overwrite, RequiredBy} from '../augments/type';
 import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {ParsedOutput} from '../parser/parsed-output';
+import {checkThatPdfExists} from '../parser/read-pdf';
 import {repoRootDir, sampleFileDir} from '../repo-paths';
 import {sanitizePdf} from './sanitizer';
 
@@ -24,16 +25,17 @@ export type SanitizedTestFile<SelectedParser extends ParserType> = {
       }
 );
 
-type RequiredNameStatementPdf<SelectedParser extends ParserType = ParserType> = Overwrite<
+type SanitizingStatementPdf<SelectedParser extends ParserType = ParserType> = Overwrite<
     StatementPdf<SelectedParser>,
-    {parserInput: RequiredBy<StatementPdf<SelectedParser>['parserInput'], 'name'>}
+    {parserInput: RequiredBy<StatementPdf<SelectedParser>['parserInput'], 'name' | 'debug'>}
 >;
 
 async function validateSanitizedParsing<SelectedParser extends ParserType>(
-    {parserInput, type: parserType}: RequiredNameStatementPdf<SelectedParser>,
+    {parserInput, type: parserType}: SanitizingStatementPdf<SelectedParser>,
     parsedSanitized: ParsedOutput,
 ): Promise<void> {
     const parser = parsers[parserType];
+    console.log('\n/////////////////// parsing original:\n');
     const parsedOriginal = await parser.parsePdf(parserInput);
 
     // quick sanity checks on the sanitized parsing output
@@ -42,7 +44,12 @@ async function validateSanitizedParsing<SelectedParser extends ParserType>(
             `Sanitized incomes count did not match the original in "${parserInput.name}"`,
         );
     }
+
     if (parsedSanitized.expenses.length !== parsedOriginal.expenses.length) {
+        console.log('/////////////////// parsed');
+        console.log(parsedSanitized);
+        console.log('/////////////////// original');
+        console.log(parsedOriginal);
         throw new Error(
             `Sanitized expenses count did not match the original in "${parserInput.name}"`,
         );
@@ -56,10 +63,11 @@ function getSanitizedName(filePath: string): string {
 async function createSanitizedTestFileObject<SelectedParser extends ParserType>({
     parserInput,
     type: parserType,
-}: RequiredNameStatementPdf<SelectedParser>): Promise<SanitizedTestFile<SelectedParser>> {
+}: SanitizingStatementPdf<SelectedParser>): Promise<SanitizedTestFile<SelectedParser>> {
     const parser = parsers[parserType];
 
-    const sanitizedText = await sanitizePdf(parserInput.filePath, parserType);
+    const sanitizedText = await sanitizePdf(parserInput.filePath, parserType, parserInput.debug);
+
     let parsedSanitized: ParsedOutput | undefined;
     let parseError: Error | undefined;
     try {
@@ -90,16 +98,30 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
 export async function writeSanitizedTestFile<SelectedParser extends ParserType = ParserType>(
     rawStatementPdf: StatementPdf<SelectedParser>,
     outputFileName: string,
+    debug: boolean = rawStatementPdf.parserInput.debug || false,
 ) {
     const sampleFilePath = join(sampleFileDir, rawStatementPdf.type, outputFileName);
 
-    const statementPdf: RequiredNameStatementPdf<SelectedParser> = {
+    const statementPdf: SanitizingStatementPdf<SelectedParser> = {
         ...rawStatementPdf,
         parserInput: {
             name: getSanitizedName(sampleFilePath),
             ...rawStatementPdf.parserInput,
+            debug,
         },
     };
+    checkThatPdfExists(statementPdf.parserInput.filePath);
+
+    // first, make sure the pdf itself passes parsing
+    try {
+        await parsers[statementPdf.type].parsePdf({...statementPdf.parserInput, debug: false});
+    } catch (error) {
+        throw new Error(
+            `Failed to parse the original PDF before trying to sanitize it: ${
+                error instanceof Error && error.stack ? error.stack : String(error)
+            }`,
+        );
+    }
 
     const sanitizedTestObject = await createSanitizedTestFileObject(statementPdf);
 
@@ -115,7 +137,10 @@ export async function writeSanitizedTestFile<SelectedParser extends ParserType =
         throw new Error(`sanitized test file was not written: ${sampleFilePath}`);
     }
 
-    return sampleFilePath;
+    return {
+        path: sampleFilePath,
+        result: sanitizedTestObject.output || sanitizedTestObject.errorMessage,
+    };
 }
 
 export function createSanitizedTestInput<SelectedParser extends ParserType>(

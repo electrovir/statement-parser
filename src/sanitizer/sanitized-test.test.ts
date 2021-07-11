@@ -14,7 +14,7 @@ testGroup({
         getEnumTypedValues(ParserType).forEach((singleParserType) => {
             runTest({
                 expectError: {
-                    errorMessage: `File "${missingFileName}" does not exist`,
+                    errorMessage: `PDF file "${missingFileName}" does not exist`,
                 },
                 description: `fails on missing file for ${singleParserType}`,
                 test: async () => {

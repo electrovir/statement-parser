@@ -1,8 +1,8 @@
-import {existsSync} from 'fs-extra';
 import {extname, relative} from 'path';
 import {getEnumTypedValues} from '../augments/object';
 import {isParserType, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
+import {checkThatPdfExists} from '../parser/read-pdf';
 import {repoRootDir} from '../repo-paths';
 import {writeSanitizedTestFile} from './sanitized-test';
 
@@ -19,30 +19,27 @@ export const CliErrors = {
     InvalidPdfPath(inputPdfPath: string) {
         return `Invalid PDF file path "${inputPdfPath}". Missing .pdf extension.`;
     },
-    PdfPathNoExist(inputPdfPath: string) {
-        return `Given PDF file "${inputPdfPath}" does not exist!`;
-    },
     MissingOutputFileName: `Missing output file name`,
     InvalidOutputFileName(inputOutputFileName: string) {
         return `Invalid output file name "${inputOutputFileName}". Missing .json extension.`;
     },
 };
 
-async function runSanitization<SelectedParser extends ParserType>({
-    parserType,
-    inputPdfFile,
-    outputFileName,
-}: CliArgs<SelectedParser>) {
+async function runSanitization<SelectedParser extends ParserType>(
+    {parserType, inputPdfFile, outputFileName}: CliArgs<SelectedParser>,
+    debug: boolean,
+) {
     const parserInput: StatementPdf<SelectedParser> = {
         parserInput: {
             filePath: relative(repoRootDir, inputPdfFile),
+            debug,
         },
         type: parserType,
     };
 
-    const filePath = await writeSanitizedTestFile(parserInput, outputFileName);
+    const {path, result} = await writeSanitizedTestFile(parserInput, outputFileName);
 
-    return {filePath, usageInTest: `To use in test: `};
+    return {sanitizedTestFilePath: path, result};
 }
 
 type CliArgs<SelectedParser extends ParserType = ParserType> = {
@@ -73,9 +70,7 @@ function getValidatedArgs<SelectedParser extends ParserType = ParserType>(
     if (extname(inputPdfFilePathArg) !== '.pdf') {
         throw new Error(CliErrors.InvalidPdfPath(inputPdfFilePathArg));
     }
-    if (!existsSync(inputPdfFilePathArg)) {
-        throw new Error(CliErrors.PdfPathNoExist(inputPdfFilePathArg));
-    }
+    checkThatPdfExists(inputPdfFilePathArg);
 
     // validate output file input
     if (!outputFileNameArg) {
@@ -98,22 +93,25 @@ const helpMessage = `Usage: node ${relative(
 )} parser-type input-pdf-file.pdf output-sanitized-text-file.json\n`;
 
 /** Exported just so we can test it without running bash scripts */
-export async function sanitizeForTestFileCli(args: string[], printHelp = false) {
+export async function sanitizeForTestFileCli(args: string[], debug: boolean) {
     let validatedArgs: CliArgs;
     try {
         validatedArgs = getValidatedArgs(args);
     } catch (error) {
-        printHelp && console.log(helpMessage);
+        debug && console.log(helpMessage);
         throw error;
     }
-    return await runSanitization(validatedArgs);
+    return await runSanitization(validatedArgs, debug);
 }
 
 // when this script is run directly
 // run with "npm run sanitize"
 if (require.main === module) {
     sanitizeForTestFileCli(process.argv.slice(2), true)
-        .then((results) => console.log(results))
+        .then((output) => {
+            console.log('Results:', output.result);
+            console.log('Sample file written to:', output.sanitizedTestFilePath);
+        })
         .catch((error) => {
             console.error(error);
             process.exit(1);

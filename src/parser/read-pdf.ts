@@ -17,8 +17,8 @@ function createSource(path: string): DocumentInitParameters {
     return {url: path, verbosity: VerbosityLevel.ERRORS};
 }
 
-function checkThatPdfExists(filePath: string): void {
+export function checkThatPdfExists(filePath: string): void {
     if (!existsSync(filePath)) {
-        throw new Error(`File "${filePath}" does not exist`);
+        throw new Error(`PDF file "${filePath}" does not exist`);
     }
 }

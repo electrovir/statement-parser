@@ -133,6 +133,22 @@ testGroup({
                 return replaceStringAtIndex('eat the waffles', 8, 'blueberry ', 0);
             },
         });
+
+        runTest({
+            description: 'should work with length when start index is 0 and replacement is shorter',
+            expect: ' of',
+            test: () => {
+                return replaceStringAtIndex(' a b c', 0, ' of', 6);
+            },
+        });
+
+        runTest({
+            description: 'should work with length when start index is 0 and replacement is longer',
+            expect: ' super duper thing',
+            test: () => {
+                return replaceStringAtIndex(' a b c', 0, ' super duper thing', 6);
+            },
+        });
     },
 });
 

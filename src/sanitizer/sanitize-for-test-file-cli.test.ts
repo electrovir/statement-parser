@@ -7,7 +7,7 @@ import {createSanitizedTestInput} from './sanitized-test';
 
 function testTempOutputFile(args: string[]) {
     return async () => {
-        const {filePath} = await sanitizeForTestFileCli(args);
+        const {sanitizedTestFilePath: filePath} = await sanitizeForTestFileCli(args, false);
 
         const testInput = createSanitizedTestInput(filePath);
 
@@ -60,7 +60,7 @@ testGroup((runTest) => {
     });
     runTest({
         expectError: {
-            errorMessage: CliErrors.PdfPathNoExist('missing-file.pdf'),
+            errorMessage: `PDF file "missing-file.pdf" does not exist`,
         },
         description: 'api rejects PDF file path that is not on disk',
         test: testTempOutputFile([ParserType.Paypal, 'missing-file.pdf']),
@@ -81,6 +81,10 @@ testGroup((runTest) => {
     });
     runTest({
         description: 'tests dummy pdf file',
+        expectError: {
+            errorMessage:
+                /Failed to parse the original PDF before trying to sanitize it: Error: Reached end of input before hitting end state on "sample-files\/dummy\.pdf.+/,
+        },
         test: testTempOutputFile([ParserType.Paypal, dummyPdfPath, 'temp/dummy-output-file.json']),
     });
 });
