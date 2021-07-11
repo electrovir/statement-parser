@@ -1,5 +1,4 @@
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
-import {getEnumTypedValues} from '../../augments/object';
 import {sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -17,14 +16,14 @@ enum State {
     End = 'end',
 }
 
-enum ParsingTriggers {
-    TotalPayments = 'total payments and credits for this period',
-    AccountNumber = 'account number',
-    Payments = 'payments and credits',
-    TransactionsContinued = 'transactions (continued)',
-    Transactions = 'transactions',
-    StatementClosingDate = 'statement closing date',
-}
+const PreserveKeywords = {
+    TotalPayments: 'total payments and credits for this period',
+    AccountNumber: /^Account Number\s+/,
+    Payments: /^\s*payments and credits\s*$/i,
+    TransactionsContinued: /^\s*transactions \(continued\)\s*$/i,
+    Transactions: /^\s*transactions\s*$/i,
+    StatementClosingDate: 'statement closing date',
+};
 
 export type UsaaVisaCreditCardTransaction = ParsedTransaction & {
     postDate: Date;
@@ -35,15 +34,16 @@ export type UsaaVisaCreditOutput = ParsedOutput<UsaaVisaCreditCardTransaction>;
 
 const tableHeadersRegExp = /^trans date\s*post date/i;
 const creditsEndRegExp = /^\s*total transactions for/i;
-const paymentsEndRegExp = new RegExp(`(?:^${ParsingTriggers.TotalPayments}\\s+\\$)|(?:^$)`, 'i');
-const accountNumberRegExp = new RegExp(`${ParsingTriggers.AccountNumber}.+(\\d{4})$`, 'i');
-const paymentsAndCreditsRegExp = new RegExp(`^\\s*${ParsingTriggers.Payments}$`);
-// const closingDateRegExp = /statement closing date\s+(\d{2}\/\d{2}\/\d{2})/i;
-const closingDateRegExp = new RegExp(
-    `${ParsingTriggers.StatementClosingDate}\\s+(\\d{2}/\\d{2}/\\d{2})`,
+const paymentsEndRegExp = new RegExp(`(?:^${PreserveKeywords.TotalPayments}\\s+\\$)|(?:^$)`, 'i');
+const extractAccountNumberRegExp = new RegExp(
+    `${PreserveKeywords.AccountNumber.source}.+(\\d{1,4})$`,
     'i',
 );
-const feesRegExp = /^\s*fees\s*$/;
+const closingDateRegExp = new RegExp(
+    `${PreserveKeywords.StatementClosingDate}\\s+(\\d{1,2}/\\d{1,2}/\\d{1,2})`,
+    'i',
+);
+const feesRegExp = /^\s*fees\s*$/i;
 
 export const usaaVisaCreditCardStatementParser = createStatementParser<State, UsaaVisaCreditOutput>(
     {
@@ -52,17 +52,17 @@ export const usaaVisaCreditCardStatementParser = createStatementParser<State, Us
         initialState: State.Header,
         endState: State.End,
         parserKeywords: [
-            ...getEnumTypedValues(ParsingTriggers),
+            // most of the RegExps are not included here because they capture sensitive information
+            ...Object.values(PreserveKeywords),
             tableHeadersRegExp,
             creditsEndRegExp,
-            closingDateRegExp,
             feesRegExp,
         ],
     },
 );
 
 const transactionRegex =
-    /^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
+    /^(\d{1,2}\/\d{1,2})\s+(\d{1,2}\/\d{1,2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
 
 function processTransactionLine(
     line: string,
@@ -120,7 +120,7 @@ function performStateAction(
         }
     } else if (currentState === State.Header) {
         const statementClosingDateRegex = line.match(closingDateRegExp);
-        const accountNumberRegex = line.match(accountNumberRegExp);
+        const accountNumberRegex = line.match(extractAccountNumberRegExp);
         if (statementClosingDateRegex) {
             output.endDate = dateFromSlashFormat(
                 statementClosingDateRegex[1],
@@ -139,7 +139,7 @@ function nextState(currentState: State, line: string): State {
 
     switch (currentState) {
         case State.Header:
-            if (line.match(paymentsAndCreditsRegExp)) {
+            if (line.match(PreserveKeywords.Payments)) {
                 return State.PaymentHeader;
             }
             break;
@@ -159,19 +159,21 @@ function nextState(currentState: State, line: string): State {
             }
             break;
         case State.PaymentFiller:
-            if (line === ParsingTriggers.TransactionsContinued) {
+            if (line.match(PreserveKeywords.TransactionsContinued)) {
                 return State.Payment;
             }
             break;
         case State.CreditFiller:
-            if (line === ParsingTriggers.Transactions) {
+            if (line.match(PreserveKeywords.Transactions)) {
                 return State.CreditHeader;
             } else if (line.match(feesRegExp)) {
                 return State.End;
             }
             break;
         case State.CreditStartedFiller:
-            if (line === ParsingTriggers.TransactionsContinued || line.match(transactionRegex)) {
+            if (
+                line.match(PreserveKeywords.TransactionsContinued || line.match(transactionRegex))
+            ) {
                 return State.Credit;
             }
             break;
