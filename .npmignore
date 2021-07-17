@@ -1,7 +1,9 @@
 .prettierrc.json
-dist/test
+*.test.js
+*.test.d.ts
 src
-downloads
-test
+files
 .vscode
 tsconfig.json
+prettierignore
+.cspell.json
