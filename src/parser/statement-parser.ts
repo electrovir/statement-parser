@@ -1,4 +1,5 @@
 import {flatten2dArray} from '../augments/array';
+import {readPdf} from '../pdf/read-pdf';
 import {ParsedOutput} from './parsed-output';
 import {
     ParsePdfFunction,
@@ -12,7 +13,6 @@ import {
     CreateStateMachineInput,
     ParserInitInput,
 } from './parser-state-machine';
-import {readPdf} from './read-pdf';
 
 export type ConvertPdfToTextFunction = (filePath: string) => Promise<string[]>;
 

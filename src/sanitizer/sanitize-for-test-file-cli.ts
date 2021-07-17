@@ -2,7 +2,7 @@ import {extname, relative} from 'path';
 import {getEnumTypedValues} from '../augments/object';
 import {isParserType, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
-import {checkThatPdfExists} from '../parser/read-pdf';
+import {checkThatPdfExists} from '../pdf/read-pdf';
 import {repoRootDir} from '../repo-paths';
 import {writeSanitizedTestFile} from './sanitized-test';
 

@@ -3,9 +3,9 @@ import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
 import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
 import {Overwrite} from '../../augments/type';
+import {getPdfDocument} from '../../pdf/read-pdf';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
-import {getPdfDocument} from '../read-pdf';
 import {createStatementParser} from '../statement-parser';
 
 enum State {

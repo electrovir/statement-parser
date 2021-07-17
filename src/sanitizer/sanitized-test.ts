@@ -5,7 +5,7 @@ import {Overwrite, RequiredBy} from '../augments/type';
 import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {ParsedOutput} from '../parser/parsed-output';
-import {checkThatPdfExists} from '../parser/read-pdf';
+import {checkThatPdfExists} from '../pdf/read-pdf';
 import {repoRootDir, sampleFileDir} from '../repo-paths';
 import {sanitizePdf} from './sanitizer';
 
