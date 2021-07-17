@@ -1,5 +1,2 @@
-*.js
 node_modules
-# this is ignored at the moment because it's reading actual bank statements
-test
 dist
