@@ -23,12 +23,17 @@ export const CliErrors = {
     InvalidOutputFileName(inputOutputFileName: string) {
         return `Invalid output file name "${inputOutputFileName}". Missing .json extension.`;
     },
+    InvalidDebugFlag(inputDebugFlag: string) {
+        return `Invalid debug flag "${inputDebugFlag}". Expected --debug.`;
+    },
 };
 
-async function runSanitization<SelectedParser extends ParserType>(
-    {parserType, inputPdfFile, outputFileName}: CliArgs<SelectedParser>,
-    debug: boolean,
-) {
+async function runSanitization<SelectedParser extends ParserType>({
+    parserType,
+    inputPdfFile,
+    outputFileName,
+    debug,
+}: CliArgs<SelectedParser>) {
     const parserInput: StatementPdf<SelectedParser> = {
         parserInput: {
             filePath: relative(repoRootDir, inputPdfFile),
@@ -46,6 +51,7 @@ type CliArgs<SelectedParser extends ParserType = ParserType> = {
     parserType: SelectedParser;
     inputPdfFile: string;
     outputFileName: string;
+    debug: boolean;
 };
 
 function getValidatedArgs<SelectedParser extends ParserType = ParserType>(
@@ -54,6 +60,7 @@ function getValidatedArgs<SelectedParser extends ParserType = ParserType>(
     const parserTypeArg = args[0];
     const inputPdfFilePathArg = args[1];
     const outputFileNameArg = args[2];
+    const debugArg = args[3];
 
     // validate parser type input
     if (!parserTypeArg) {
@@ -80,28 +87,33 @@ function getValidatedArgs<SelectedParser extends ParserType = ParserType>(
         throw new Error(CliErrors.InvalidOutputFileName(outputFileNameArg));
     }
 
+    if (debugArg && debugArg !== '--debug') {
+        throw new Error(CliErrors.InvalidDebugFlag(debugArg));
+    }
+
     return {
         parserType: parserTypeArg as SelectedParser,
         inputPdfFile: inputPdfFilePathArg,
         outputFileName: outputFileNameArg,
+        debug: !!debugArg,
     };
 }
 
 const helpMessage = `Usage: node ${relative(
     process.cwd(),
     __filename,
-)} parser-type input-pdf-file.pdf output-sanitized-text-file.json\n`;
+)} parser-type input-pdf-file.pdf output-sanitized-text-file.json [--debug]\n`;
 
 /** Exported just so we can test it without running bash scripts */
-export async function sanitizeForTestFileCli(args: string[], debug: boolean) {
+export async function sanitizeForTestFileCli(args: string[], printHelp = true) {
     let validatedArgs: CliArgs;
     try {
         validatedArgs = getValidatedArgs(args);
     } catch (error) {
-        debug && console.log(helpMessage);
+        printHelp && console.log(helpMessage);
         throw error;
     }
-    return await runSanitization(validatedArgs, debug);
+    return await runSanitization(validatedArgs);
 }
 
 // when this script is run directly

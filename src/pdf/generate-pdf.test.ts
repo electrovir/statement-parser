@@ -4,6 +4,8 @@ import {tempOutputDir} from '../repo-paths';
 import {generatePdfDocument} from './generate-pdf';
 import {checkThatPdfExists, readPdf} from './read-pdf';
 
+let testCounter = 0;
+
 function generateGeneratePdfTest(
     description: string,
     inputText: string[],
@@ -13,7 +15,10 @@ function generateGeneratePdfTest(
         description,
         expect: expect ?? inputText,
         test: async () => {
-            const outputFilePath = join(tempOutputDir, 'generate-pdf-text-output.pdf');
+            const outputFilePath = join(
+                tempOutputDir,
+                `generate-pdf-text-output-${testCounter++}.pdf`,
+            );
 
             await generatePdfDocument(inputText, outputFilePath);
 

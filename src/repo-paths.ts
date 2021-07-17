@@ -4,8 +4,9 @@ export const repoRootDir = __dirname.replace(/(?:src|dist).*/, '');
 
 const filesDir = join(repoRootDir, 'files');
 
-export const sampleFileDir = join(filesDir, 'sample-files');
-export const dummyPdfPath = join(sampleFileDir, 'dummy.pdf');
+export const sampleFilesDir = join(filesDir, 'sample-files');
+export const dummyPdfPath = join(sampleFilesDir, 'dummy.pdf');
+export const sanitizedFilesDir = join(sampleFilesDir, 'sanitized');
 
 export const tempOutputDir = join(filesDir, 'temp-output');
 export const temp_sanitizerRawTestFilePath = join(tempOutputDir, 'last-raw-text-for-sanitizer.txt');

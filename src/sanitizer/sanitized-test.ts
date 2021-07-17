@@ -6,7 +6,7 @@ import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {ParsedOutput} from '../parser/parsed-output';
 import {checkThatPdfExists} from '../pdf/read-pdf';
-import {repoRootDir, sampleFileDir} from '../repo-paths';
+import {repoRootDir, sanitizedFilesDir} from '../repo-paths';
 import {sanitizePdf} from './sanitizer';
 
 export type SanitizedTestFile<SelectedParser extends ParserType> = {
@@ -35,7 +35,9 @@ async function validateSanitizedParsing<SelectedParser extends ParserType>(
     parsedSanitized: ParsedOutput,
 ): Promise<void> {
     const parser = parsers[parserType];
-    console.log('\n/////////////////// parsing original:\n');
+    if (parserInput.debug) {
+        console.log('\n/////////////////// parsing original:\n');
+    }
     const parsedOriginal = await parser.parsePdf(parserInput);
 
     // quick sanity checks on the sanitized parsing output
@@ -45,7 +47,7 @@ async function validateSanitizedParsing<SelectedParser extends ParserType>(
         );
     }
 
-    if (parsedSanitized.expenses.length !== parsedOriginal.expenses.length) {
+    if (parsedSanitized.expenses.length !== parsedOriginal.expenses.length && parserInput.debug) {
         console.log('/////////////////// parsed');
         console.log(parsedSanitized);
         console.log('/////////////////// original');
@@ -100,7 +102,7 @@ export async function writeSanitizedTestFile<SelectedParser extends ParserType =
     outputFileName: string,
     debug: boolean = rawStatementPdf.parserInput.debug || false,
 ) {
-    const sampleFilePath = join(sampleFileDir, rawStatementPdf.type, outputFileName);
+    const sampleFilePath = join(sanitizedFilesDir, rawStatementPdf.type, outputFileName);
 
     const statementPdf: SanitizingStatementPdf<SelectedParser> = {
         ...rawStatementPdf,
@@ -114,7 +116,7 @@ export async function writeSanitizedTestFile<SelectedParser extends ParserType =
 
     // first, make sure the pdf itself passes parsing
     try {
-        await parsers[statementPdf.type].parsePdf({...statementPdf.parserInput, debug: false});
+        await parsers[statementPdf.type].parsePdf(statementPdf.parserInput);
     } catch (error) {
         throw new Error(
             `Failed to parse the original PDF before trying to sanitize it: ${
@@ -158,7 +160,12 @@ export function createSanitizedTestInput<SelectedParser extends ParserType>(
                 parserOptions: testFile.parserOptions,
                 name: testFile.name,
             });
-            return reParsedOutput;
+
+            /**
+             * Make sure all the values are JSON values. For example, properties with the value of
+             * undefined are removed and invalid date values are turned into null
+             */
+            return JSON.parse(JSON.stringify(reParsedOutput));
         },
         description: `compared sanitized file "${filePath}"`,
         ...(testFile.output

@@ -3,7 +3,7 @@ import {join} from 'path';
 import {testGroup} from 'test-vir';
 import {getEnumTypedValues} from '../augments/object';
 import {ParserType} from '../parser/all-parsers';
-import {sampleFileDir} from '../repo-paths';
+import {sampleFilesDir} from '../repo-paths';
 import {writeSanitizedTestFile} from './sanitized-test';
 
 testGroup({
@@ -27,7 +27,7 @@ testGroup({
                         fakeOutputFile,
                     );
                     // just in case the file actually gets written
-                    unlinkSync(join(sampleFileDir, fakeOutputFile));
+                    unlinkSync(join(sampleFilesDir, fakeOutputFile));
                 },
             });
         });
