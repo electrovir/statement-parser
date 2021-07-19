@@ -9,3 +9,4 @@ prettierignore
 .cspell.json
 dist/sanitizer
 repo-paths*
+bulk-sanitize.sh
