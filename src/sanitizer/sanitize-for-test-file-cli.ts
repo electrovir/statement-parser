@@ -42,7 +42,7 @@ async function runSanitization<SelectedParser extends ParserType>({
         type: parserType,
     };
 
-    const {path, result} = await writeSanitizedTestFile(parserInput, outputFileName);
+    const {path, result} = await writeSanitizedTestFile(parserInput, outputFileName, debug);
 
     return {sanitizedTestFilePath: path, result};
 }
@@ -102,10 +102,14 @@ function getValidatedArgs<SelectedParser extends ParserType = ParserType>(
 const helpMessage = `Usage: node ${relative(
     process.cwd(),
     __filename,
-)} parser-type input-pdf-file.pdf output-sanitized-text-file.json [--debug]\n`;
+)} parser-type input-pdf-file.pdf output-sanitized-text-file.json [--debug]\nIf run through "npm sanitize" make sure to pass -- before the debug input, like so: npm sanitize x x x -- --debug`;
 
 /** Exported just so we can test it without running bash scripts */
 export async function sanitizeForTestFileCli(args: string[], printHelp = true) {
+    if (args.includes('-h') || args.includes('help') || args.includes('--help')) {
+        return helpMessage;
+    }
+
     let validatedArgs: CliArgs;
     try {
         validatedArgs = getValidatedArgs(args);
@@ -113,7 +117,12 @@ export async function sanitizeForTestFileCli(args: string[], printHelp = true) {
         printHelp && console.log(helpMessage);
         throw error;
     }
-    return await runSanitization(validatedArgs);
+    validatedArgs.debug && console.log({validatedArgs});
+
+    const results = await runSanitization(validatedArgs);
+
+    validatedArgs.debug && console.log('Results:', results.result);
+    return results;
 }
 
 // when this script is run directly
@@ -121,8 +130,11 @@ export async function sanitizeForTestFileCli(args: string[], printHelp = true) {
 if (require.main === module) {
     sanitizeForTestFileCli(process.argv.slice(2), true)
         .then((output) => {
-            console.log('Results:', output.result);
-            console.log('Sample file written to:', output.sanitizedTestFilePath);
+            if (typeof output === 'string') {
+                console.log(output);
+            } else {
+                console.log('Sample file written to:', output.sanitizedTestFilePath);
+            }
         })
         .catch((error) => {
             console.error(error);

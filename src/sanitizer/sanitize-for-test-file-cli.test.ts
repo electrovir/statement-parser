@@ -9,7 +9,11 @@ import {createSanitizedTestInput} from './sanitized-test';
 
 function testTempOutputFile(args: string[]) {
     return async () => {
-        const {sanitizedTestFilePath: filePath} = await sanitizeForTestFileCli(args, false);
+        const output = await sanitizeForTestFileCli(args, false);
+        if (typeof output === 'string') {
+            throw new Error(`Sanitization CLI didn't produce proper output.`);
+        }
+        const {sanitizedTestFilePath: filePath} = output;
 
         const testInput = createSanitizedTestInput(filePath);
 
