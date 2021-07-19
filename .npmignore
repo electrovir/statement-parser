@@ -7,3 +7,5 @@ files
 tsconfig.json
 prettierignore
 .cspell.json
+dist/sanitizer
+repo-paths*
