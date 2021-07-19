@@ -1,5 +1,6 @@
 import {ensureDir, existsSync, readFileSync, writeFile} from 'fs-extra';
 import {dirname, join, relative} from 'path';
+import {format} from 'prettier';
 import {TestInputObject} from 'test-vir';
 import {Overwrite, RequiredBy} from '../augments/type';
 import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
@@ -97,6 +98,8 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
     return sanitizedTestObject;
 }
 
+const prettierConfig = JSON.parse(readFileSync(join(repoRootDir, '.prettierrc.json')).toString());
+
 export async function writeSanitizedTestFile<SelectedParser extends ParserType = ParserType>(
     rawStatementPdf: StatementPdf<SelectedParser>,
     outputFileName: string,
@@ -133,7 +136,14 @@ export async function writeSanitizedTestFile<SelectedParser extends ParserType =
 
     await ensureDir(dirname(sampleFilePath));
 
-    await writeFile(sampleFilePath, JSON.stringify(sanitizedTestObject, null, 4));
+    await writeFile(
+        sampleFilePath,
+        // format the file so it doesn't break format tests
+        format(JSON.stringify(sanitizedTestObject, null, 4), {
+            ...prettierConfig,
+            filepath: sampleFilePath,
+        }),
+    );
 
     if (!existsSync(sampleFilePath)) {
         throw new Error(`sanitized test file was not written: ${sampleFilePath}`);

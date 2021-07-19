@@ -13,14 +13,14 @@ export async function sanitizePdf(
 
     const rawText = await parser.convertPdfToText(filePath);
 
+    writeFileSync(temp_sanitizerRawTestFilePath, rawText.join('\n'));
     if (debug) {
-        writeFileSync(temp_sanitizerRawTestFilePath, rawText.join('\n'));
         console.info(`Pdf text output written (for debugging) to ${temp_sanitizerRawTestFilePath}`);
     }
 
-    const sanitizedText = sanitizeStatementText(rawText, parser.parserKeywords);
+    const sanitizedText = sanitizeStatementText(rawText, parser.parserKeywords, debug);
+    writeFileSync(temp_sanitizerSanitizedTextFilePath, sanitizedText.join('\n'));
     if (debug) {
-        writeFileSync(temp_sanitizerSanitizedTextFilePath, sanitizedText.join('\n'));
         console.info(
             `Sanitized PDF text written (for debugging) to ${temp_sanitizerSanitizedTextFilePath}`,
         );
@@ -33,15 +33,16 @@ function makeRegExpForWholeLine(input: RegExp): RegExp {
     return new RegExp(`^${input.source}$`, input.flags);
 }
 
-const symbolsToPreserveRegExp = /[\$\/\-]/;
+const justSymbolsRegExp = /\$\/\-\(\)/;
+const symbolsToPreserveRegExp = new RegExp(`[${justSymbolsRegExp.source}]`);
 
 const digitsOnlyRegExp = /[\d\.,]+/;
 
 const digitsRegExp = new RegExp(
-    `${digitsOnlyRegExp.source}(?:$|${symbolsToPreserveRegExp.source})`,
+    `${symbolsToPreserveRegExp.source}?${digitsOnlyRegExp.source}(?:$|${symbolsToPreserveRegExp.source})`,
 );
 const whitespaceRegExp = /\s+/;
-const wordsRegExp = /[\S\w\d\*\#]+/;
+const wordsRegExp = new RegExp(`[^${justSymbolsRegExp.source}\\s]+`);
 
 const allRegExps = [symbolsToPreserveRegExp, digitsRegExp, whitespaceRegExp, wordsRegExp];
 
@@ -51,10 +52,7 @@ const exclusiveRegExps = new Map<RegExp, RegExp>(
     }),
 );
 
-const combinedRegExp = new RegExp(
-    `(?:${allRegExps.map((regExp) => regExp.source).join('|')})`,
-    'g',
-);
+const combinedRegExp = new RegExp(`${allRegExps.map((regExp) => regExp.source).join('|')}`, 'g');
 
 function getExclusiveRegExp(input: RegExp): RegExp {
     const exclusiveVersion = exclusiveRegExps.get(input);
@@ -67,6 +65,7 @@ function getExclusiveRegExp(input: RegExp): RegExp {
 export function sanitizeStatementText(
     text: string[],
     phrasesToPreserve: ParserKeyword[] = [],
+    debug: boolean,
 ): string[] {
     // start at a's char code -1 so that the first line replacement happens with 'a'
     let currentLetter = String.fromCharCode('a'.charCodeAt(0) - 1);
@@ -77,10 +76,13 @@ export function sanitizeStatementText(
         const keywordIndexes: number[][] = phrasesToPreserve.map((keyword) => {
             return allIndexesOf(line, keyword, false);
         });
+        const containsKeywords = keywordIndexes.some((phraseIndexes) => phraseIndexes.length > 0);
 
         const indexMapping = Array.from(line).map((_, index) => index);
 
+        const matches: string[] = [];
         const cleanedLine = line.replace(combinedRegExp, (match, matchIndexInString) => {
+            matches.push(match);
             // the match is ONLY for allowed symbols
             if (match.match(getExclusiveRegExp(symbolsToPreserveRegExp))) {
                 return match;
@@ -127,61 +129,81 @@ export function sanitizeStatementText(
             return replacement;
         });
 
-        let firstMatched: string | RegExp | undefined = undefined;
-        const keywordsIncludedLine = !!line.trim()
-            ? phrasesToPreserve.reduce((wholeString: string, currentKeyword, index) => {
-                  const indexesInOriginalLine = keywordIndexes[index];
-                  return indexesInOriginalLine.reduce(
-                      (replaceInHere: string, indexInOriginalLine) => {
-                          if (firstMatched) {
-                              throw new Error(
-                                  `"${firstMatched}" already matched but also matched "${currentKeyword}" for\n\t"${line}"`,
-                              );
-                          } else {
-                              firstMatched = currentKeyword;
-                          }
-                          const currentKeywordMatch =
-                              currentKeyword instanceof RegExp
-                                  ? line.slice(indexInOriginalLine).match(currentKeyword)?.[0]
-                                  : currentKeyword;
-                          if (currentKeywordMatch == undefined) {
-                              throw new Error(
-                                  `"${currentKeyword}" was found in "${line}" initially but wasn't later!??`,
-                              );
-                          }
+        // uncomment for debugging
+        if (debug) {
+            console.log({containsKeywords, line, matches});
+        }
 
-                          //   // uncomment for debugging
-                          //   console.log({
-                          //       replaceInHere,
-                          //       mappedIndex: indexMapping[indexInOriginalLine],
-                          //       indexInOriginalLine,
-                          //       currentKeywordMatch,
-                          //       length: currentKeywordMatch.length,
-                          //       indexMapping,
-                          //       end: indexMapping[
-                          //           indexInOriginalLine + currentKeywordMatch.length - 1
-                          //       ],
-                          //       start: indexMapping[indexInOriginalLine],
-                          //       replaceLength:
-                          //           indexMapping[
-                          //               indexInOriginalLine + currentKeywordMatch.length - 1
-                          //           ] -
-                          //           indexMapping[indexInOriginalLine] +
-                          //           1,
-                          //   });
-                          return replaceStringAtIndex(
-                              replaceInHere,
-                              indexMapping[indexInOriginalLine],
-                              currentKeywordMatch,
-                              indexMapping[indexInOriginalLine + currentKeywordMatch.length - 1] -
-                                  indexMapping[indexInOriginalLine] +
-                                  1,
-                          );
-                      },
-                      wholeString,
-                  );
-              }, cleanedLine)
-            : line;
+        let firstMatched: string | RegExp | undefined = undefined;
+        const keywordsIncludedLine =
+            !!line.trim() && containsKeywords
+                ? phrasesToPreserve.reduce((wholeString: string, currentKeyword, index) => {
+                      const indexesInOriginalLine = keywordIndexes[index];
+                      return indexesInOriginalLine.reduce(
+                          (replaceInHere: string, indexInOriginalLine) => {
+                              if (firstMatched) {
+                                  throw new Error(
+                                      `"${firstMatched}" already matched but also matched "${currentKeyword}" for\n\t"${line}"`,
+                                  );
+                              } else {
+                                  firstMatched = currentKeyword;
+                              }
+                              const currentKeywordMatch =
+                                  currentKeyword instanceof RegExp
+                                      ? line.slice(indexInOriginalLine).match(currentKeyword)?.[0]
+                                      : currentKeyword;
+                              if (currentKeywordMatch == undefined) {
+                                  throw new Error(
+                                      `"${currentKeyword}" was found in "${line}" initially but wasn't later!??`,
+                                  );
+                              }
+
+                              if (debug) {
+                                  console.log({
+                                      line,
+                                      replaceInHere,
+                                      mappedIndex: indexMapping[indexInOriginalLine],
+                                      indexInOriginalLine,
+                                      currentKeywordMatch,
+                                      length: currentKeywordMatch.length,
+                                      indexMapping,
+                                      end: indexMapping[
+                                          indexInOriginalLine + currentKeywordMatch.length - 1
+                                      ],
+                                      start: indexMapping[indexInOriginalLine],
+                                      replaceLength:
+                                          indexMapping[
+                                              indexInOriginalLine + currentKeywordMatch.length - 1
+                                          ] -
+                                          indexMapping[indexInOriginalLine] +
+                                          1,
+                                  });
+                              }
+                              return replaceStringAtIndex(
+                                  replaceInHere,
+                                  indexMapping[indexInOriginalLine],
+                                  currentKeywordMatch,
+                                  indexMapping[
+                                      indexInOriginalLine + currentKeywordMatch.length - 1
+                                  ] -
+                                      indexMapping[indexInOriginalLine] +
+                                      1,
+                              );
+                          },
+                          wholeString,
+                      );
+                  }, cleanedLine)
+                : cleanedLine
+                      /**
+                       * Collapse unneeded streams of single letters to just one letter. Like so: "a
+                       * b c d e f g" will turn into "g"
+                       */
+                      .replace(/(?:([a-z])(\s|$))+/g, '$1$2')
+                      /**
+                       * Remove commas in numbers since they're be invalid due to digit collapsing
+                       * ("1,234.56" will get turned into "1,2.3" wherein the comma makes no sense).
+                       */
+                      .replace(/(\d),\d/g, '$1');
 
         return keywordsIncludedLine.replace(/ {2,}/g, '  ');
     });
