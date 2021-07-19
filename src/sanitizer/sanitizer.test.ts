@@ -111,7 +111,7 @@ testGroup({
 
         sanitizerTest(
             [
-                '(555)555-555 (555) 555 555 (555)-555-555 5 (555)555-ABCDEF ABCDF - 7 ABCDEF (HACK), 555 FA FunTimes',
+                '(555)555-555 (555) 555 555 (555)-555-555 5 (555)555-ABCDEF hoops - 7 ABCDEF (HACK), 555 FA FunTimes',
             ],
             ['(0)1-2 (3) 4 5 (6)-7-8 9 (0)1-b - 2 c (d), 4 f'],
             [],
