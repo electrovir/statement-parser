@@ -13,6 +13,8 @@ export const tempOutputDir = join(filesDir, 'temp-output');
 export const temp_sanitizerRawTestFilePath = join(tempOutputDir, 'last-raw-text-for-sanitizer.txt');
 export const temp_sanitizerSanitizedTextFilePath = join(tempOutputDir, 'last-sanitized-text.txt');
 
+export const packageJson = join(repoRootDir, 'package.json');
+
 export async function getAllRecursiveFiles(
     parentDirectory: string,
     includeFolders = false,

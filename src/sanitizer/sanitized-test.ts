@@ -7,13 +7,19 @@ import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {ParsedOutput} from '../parser/parsed-output';
 import {checkThatPdfExists} from '../pdf/read-pdf';
-import {repoRootDir, sanitizedFilesDir} from '../repo-paths';
+import {packageJson, repoRootDir, sanitizedFilesDir} from '../repo-paths';
 import {sanitizePdf} from './sanitizer';
+
+const packageVersion: string = JSON.parse(readFileSync(packageJson).toString()).version;
+if (!packageVersion) {
+    throw new Error(`Package version was not found.`);
+}
 
 export type SanitizedTestFile<SelectedParser extends ParserType> = {
     text: string[];
     parserType: ParserType;
     name: string;
+    packageVersion: string;
     parserOptions?: AllParserOptions[SelectedParser];
 } & (
     | {
@@ -85,6 +91,7 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
     const sanitizedTestObject: SanitizedTestFile<SelectedParser> = {
         name: parserInput.name,
         parserType,
+        packageVersion,
         text: sanitizedText,
         ...(parsedSanitized
             ? {output: parsedSanitized}
@@ -119,7 +126,7 @@ export async function writeSanitizedTestFile<SelectedParser extends ParserType =
 
     // first, make sure the pdf itself passes parsing
     try {
-        await parsers[statementPdf.type].parsePdf(statementPdf.parserInput);
+        await parsers[statementPdf.type].parsePdf({...statementPdf.parserInput, debug});
     } catch (error) {
         throw new Error(
             `Failed to parse the original PDF before trying to sanitize it: ${
