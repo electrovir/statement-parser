@@ -172,7 +172,8 @@ function nextState(currentState: State, line: string): State {
             break;
         case State.CreditStartedFiller:
             if (
-                line.match(PreserveKeywords.TransactionsContinued || line.match(transactionRegex))
+                line.match(PreserveKeywords.TransactionsContinued) ||
+                line.match(transactionRegex)
             ) {
                 return State.Credit;
             }
