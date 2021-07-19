@@ -1,4 +1,5 @@
 import {writeFileSync} from 'fs-extra';
+import {addRegExpFlags} from '../augments/regexp';
 import {allIndexesOf, replaceStringAtIndex} from '../augments/string';
 import {parsers, ParserType} from '../parser/all-parsers';
 import {ParserKeyword} from '../parser/parser-options';
@@ -103,7 +104,20 @@ export function sanitizeStatementText(
                     currentNumber = 0;
                 }
 
-                replacement = match.replace(/\d+/g, String(currentNumber));
+                replacement = match.replace(
+                    addRegExpFlags(digitsOnlyRegExp, 'g'),
+                    (numberMatch) => {
+                        // if the match is just for punctuation, ignore it
+                        if (!numberMatch.match(/\d/)) {
+                            return numberMatch;
+                        }
+                        if (numberMatch.includes('.') && !(currentNumber % 4)) {
+                            return `${currentNumber},${currentNumber}${currentNumber}${currentNumber}.${currentNumber}${currentNumber}`;
+                        } else {
+                            return String(currentNumber);
+                        }
+                    },
+                );
             }
             // the match is text
             else {
@@ -198,12 +212,7 @@ export function sanitizeStatementText(
                        * Collapse unneeded streams of single letters to just one letter. Like so: "a
                        * b c d e f g" will turn into "g"
                        */
-                      .replace(/(?:([a-z])(\s|$))+/g, '$1$2')
-                      /**
-                       * Remove commas in numbers since they're be invalid due to digit collapsing
-                       * ("1,234.56" will get turned into "1,2.3" wherein the comma makes no sense).
-                       */
-                      .replace(/(\d),\d/g, '$1');
+                      .replace(/(?:([a-z])(\s|$))+/g, '$1$2');
 
         return keywordsIncludedLine.replace(/ {2,}/g, '  ');
     });
