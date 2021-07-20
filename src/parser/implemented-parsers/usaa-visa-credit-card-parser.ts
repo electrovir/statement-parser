@@ -62,7 +62,7 @@ export const usaaVisaCreditCardStatementParser = createStatementParser<State, Us
 );
 
 const transactionRegex =
-    /^(\d{1,2}\/\d{1,2})\s+(\d{1,2}\/\d{1,2})\s+(\S.+?)\s+?(\S.+?)\s+\$((?:\d+|,|\.)+)\-?$/;
+    /^(\d{1,2}\/\d{1,2})\s+(\d{1,2}\/\d{1,2})\s+(\S.*?)\s+?(\S.*?)\s+\$((?:\d+|,|\.)+)\-?$/;
 
 function processTransactionLine(
     line: string,
