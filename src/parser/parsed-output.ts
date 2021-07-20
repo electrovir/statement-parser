@@ -2,6 +2,7 @@ export type ParsedTransaction = {
     date: Date;
     amount: number;
     description: string;
+    originalText: string[];
 };
 
 /**

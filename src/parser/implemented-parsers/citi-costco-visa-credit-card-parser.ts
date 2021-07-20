@@ -145,6 +145,7 @@ function parseTransactionLine(
             ),
             amount: undefined,
             description: collapseSpaces(description),
+            originalText: [line],
         };
         if (amountString) {
             transaction.amount = parseAmount(amountString, negate);
@@ -186,8 +187,10 @@ function performStateAction(
 
         if (typeof lineParse === 'string') {
             lastTransaction.description += '\n' + lineParse;
+            lastTransaction.originalText.push(line);
         } else if (typeof lineParse === 'number') {
             lastTransaction.amount = lineParse;
+            lastTransaction.originalText.push(line);
         } else {
             // because a transaction's amount may not be on its first line, we must make sure we actually got the amount
             // before moving onto the next transaction

@@ -68,6 +68,7 @@ function processTransactionLine(
             amount: Number(sanitizeNumberString(amount)),
             description,
             date: dateWithinRange(startDate, endDate, Number(month), Number(day)),
+            originalText: [line],
         };
     } else {
         return line;

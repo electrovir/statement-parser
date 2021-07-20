@@ -84,6 +84,7 @@ function processTransactionLine(
             amount: Number(sanitizeNumberString(amount)),
             description,
             referenceNumber,
+            originalText: [line],
         };
     } else {
         return line;
@@ -113,7 +114,9 @@ function performStateAction(
 
         if (typeof result === 'string') {
             if (result) {
-                array[array.length - 1].description += '\n' + result;
+                const lastTransaction = array[array.length - 1];
+                lastTransaction.description += '\n' + result;
+                lastTransaction.originalText.push(line);
             }
         } else {
             array.push(result);

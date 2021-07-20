@@ -1,3 +1,4 @@
+import {createUtcDate} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
 import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
@@ -48,8 +49,8 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
         const match = line.match(headerDataLineRegExp);
         if (match) {
             const [, startDate, endDate, accountId] = match;
-            output.startDate = new Date(startDate);
-            output.endDate = new Date(endDate);
+            output.startDate = createUtcDate(startDate);
+            output.endDate = createUtcDate(endDate);
             output.accountSuffix = accountId;
         }
     } else if (currentState === State.Activity) {
@@ -58,21 +59,26 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
             const [, date, description, amountString, fees, total] = match;
             const amount = Number(sanitizeNumberString(amountString));
             const newTransaction: PaypalTransaction = {
-                date: new Date(date),
+                date: createUtcDate(date),
                 description: collapseSpaces(description),
                 // this assumption that we can always use absolute value here may be wrong
                 amount: Math.abs(Number(sanitizeNumberString(total))),
                 fees: Math.abs(Number(sanitizeNumberString(fees))),
                 baseAmount: Math.abs(amount),
+                originalText: [line],
             };
             const array = amount < 0 ? output.expenses : output.incomes;
 
             array.push(newTransaction);
         }
     } else if (currentState === State.ExpenseInside && line !== '') {
-        output.expenses[output.expenses.length - 1].description += collapseSpaces(line);
+        const lastExpense = output.expenses[output.expenses.length - 1];
+        lastExpense.description += collapseSpaces(line);
+        lastExpense.originalText.push(line);
     } else if (currentState === State.IncomeInside && line !== '') {
-        output.incomes[output.incomes.length - 1].description += ' ' + collapseSpaces(line);
+        const lastIncome = output.incomes[output.incomes.length - 1];
+        lastIncome.description += ' ' + collapseSpaces(line);
+        lastIncome.originalText.push(line);
     }
 
     return output;

@@ -97,6 +97,7 @@ function performStateAction(
                 amount: Number(sanitizeNumberString(match[2])),
                 description: collapseSpaces(match[3]).trim(),
                 from: collapseSpaces(match[3]).trim(),
+                originalText: [line],
             });
         } else {
             const currentDebit = array[array.length - 1];
@@ -105,8 +106,8 @@ function performStateAction(
              * "from" is always the last line, so shift the current "from" to "method" since it wasn't the last line.
              */
             currentDebit.description += '\n' + collapseSpaces(line).trim();
-
             currentDebit.from = collapseSpaces(line).trim();
+            currentDebit.originalText.push(line);
         }
     }
     return output;

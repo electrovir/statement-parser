@@ -1,3 +1,4 @@
+import {createUtcDate} from '../../augments/date';
 import {sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {createStatementParser} from '../statement-parser';
@@ -26,7 +27,8 @@ function readPayment(line: string): ParsedTransaction | undefined {
         return {
             amount: Number(sanitizeNumberString(amountString)),
             description: descriptionString,
-            date: new Date(dateString),
+            date: createUtcDate(dateString),
+            originalText: [line],
         };
     } else {
         return undefined;
