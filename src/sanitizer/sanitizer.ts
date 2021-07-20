@@ -70,8 +70,9 @@ export function sanitizeStatementText(
 ): string[] {
     // start at a's char code -1 so that the first line replacement happens with 'a'
     let currentLetter = String.fromCharCode('a'.charCodeAt(0) - 1);
-    // -1 here so the first replacement happens with '0'
-    let currentNumber = -1;
+    // 0 here so the first replacement happens with '1'
+    // don't use 0 as that will potentially produce invalid dates and purchase amounts
+    let currentNumber = 0;
 
     return text.map((line) => {
         const keywordIndexes: number[][] = phrasesToPreserve.map((keyword) => {
@@ -99,9 +100,9 @@ export function sanitizeStatementText(
             }
             // the match is number
             else if (match.match(getExclusiveRegExp(digitsRegExp))) {
-                currentNumber++;
+                ++currentNumber;
                 if (currentNumber > 9) {
-                    currentNumber = 0;
+                    currentNumber = 1;
                 }
 
                 replacement = match.replace(

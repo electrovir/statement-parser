@@ -79,9 +79,9 @@ testGroup({
                 unSanitized,
                 trimArray(
                     `
-                    a account number 0-1-2
-                    $3  k
-                    $4  n 5
+                    a account number 1-2-3
+                    $4  k
+                    $5  n 6
                 `.split('\n'),
                 ),
                 keywords,
@@ -92,9 +92,9 @@ testGroup({
                 unSanitized,
                 trimArray(
                     `
-                    a account number 0-1-2
-                    $3  super secret purchase g h i j k
-                    $4  n 5
+                    a account number 1-2-3
+                    $4  super secret purchase g h i j k
+                    $5  n 6
             `.split('\n'),
                 ),
                 [...keywords, /super \S+ purchase/],
@@ -113,7 +113,7 @@ testGroup({
             [
                 '(555)555-555 (555) 555 555 (555)-555-555 5 (555)555-ABCDEF hoops - 7 ABCDEF (HACK), 555 FA FunTimes',
             ],
-            ['(0)1-2 (3) 4 5 (6)-7-8 9 (0)1-b - 2 c (d), 4 f'],
+            ['(1)2-3 (4) 5 6 (7)-8-9 1 (2)3-b - 4 c (d), 6 f'],
             [],
             'maintain parentheses',
         );
