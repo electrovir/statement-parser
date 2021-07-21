@@ -32,7 +32,7 @@ fi
 
 echo "search in: $searchDir"
 echo "parser:    $specificParser"
-echo "deubg:     $debug"
+echo "debug:     $debug"
 
 npm run compile
 
