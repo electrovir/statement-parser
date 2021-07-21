@@ -120,6 +120,13 @@ testGroup({
         );
 
         sanitizerTest(
+            ['lorem ipsum dolor sit amet, consectetur-cow adipiscing'],
+            ['a b c d e f-cow h'],
+            ['cow'],
+            'handle keywords after dashes',
+        );
+
+        sanitizerTest(
             [
                 '(555)555-555 (555) 555 555 (555)-555-555 5 (555)555-ABCDEF hoops - 7 ABCDEF (HACK), 555 FA FunTimes',
             ],

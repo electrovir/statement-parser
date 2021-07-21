@@ -85,17 +85,17 @@ export function sanitizeStatementText(
         const matches: string[] = [];
         const cleanedLine = line.replace(combinedRegExp, (match, matchIndexInString) => {
             matches.push(match);
-            // the match is ONLY for allowed symbols
-            if (match.match(getExclusiveRegExp(symbolsToPreserveRegExp))) {
-                return match;
-            }
             let previousIndexToCheck = matchIndexInString - 1;
             const newIndex = previousIndexToCheck < 0 ? 0 : indexMapping[previousIndexToCheck] + 1;
 
             let replacement: string;
 
+            // the match is ONLY for allowed symbols
+            if (match.match(getExclusiveRegExp(symbolsToPreserveRegExp))) {
+                replacement = match;
+            }
             // the match is only whitespace
-            if (!match.trim()) {
+            else if (!match.trim()) {
                 replacement = match;
             }
             // the match is number
@@ -140,6 +140,10 @@ export function sanitizeStatementText(
             // handles when the replacement is longer than the original string
             // so the index mapping needs to jump up at some point
             indexMapping[match.length - 1 + matchIndexInString] = lastIndex;
+
+            if (debug) {
+                console.log({replacement, line, lastIndex, preSuffixMapping: indexMapping});
+            }
 
             // map all the index mappings that follow the remapped indexes above
             indexMapping.slice(matchIndexInString + match.length).forEach((_, index) => {
