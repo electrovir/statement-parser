@@ -1,4 +1,4 @@
-import {createUtcDate} from '../../augments/date';
+import {dateFromNamedCommaFormat, dateFromSlashFormat} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
 import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
@@ -22,9 +22,10 @@ enum ParsingTriggers {
 
 const pageEndRegExp = /^page\s+\d+$/i;
 const activityHeader = /date\s+description\s+currency\s+amount\s+fees\s+total/i;
-const headerDataLineRegExp = /(\w{3} \d{1,2}, \d{4})\s*-\s*(\w{3} \d{1,2}, \d{4})\s*(.+)$/i;
+const headerDataLineRegExp =
+    /(\w{1,3} \d{1,2},? \d{1,4})\s*-\s*(\w{1,3} \d{1,2},? \d{1,4})\s*(.+)$/;
 const transactionStartRegExp = new RegExp(
-    `^(\\d{2}/\\d{2}/\\d{4})\\s+(.+?)${ParsingTriggers.Usd}\\s+([-,.\\d]+)\\s+([-,.\\d]+)\\s+([-,.\\d]+)$`,
+    `^(\\d{1,2}/\\d{1,2}/\\d{1,4})\\s+(.+?)${ParsingTriggers.Usd}\\s+([-,.\\d]+)\\s+([-,.\\d]+)\\s+([-,.\\d]+)$`,
     'i',
 );
 
@@ -35,7 +36,6 @@ export type PaypalTransaction = ParsedTransaction & {
 
 export type PaypalOutput = ParsedOutput<PaypalTransaction>;
 
-/** @param yearPrefix This is ignored in this parser because PayPal statements include the entire year */
 export const paypalStatementParser = createStatementParser<State, PaypalOutput>({
     action: performStateAction,
     next: nextState,
@@ -49,8 +49,8 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
         const match = line.match(headerDataLineRegExp);
         if (match) {
             const [, startDate, endDate, accountId] = match;
-            output.startDate = createUtcDate(startDate);
-            output.endDate = createUtcDate(endDate);
+            output.startDate = dateFromNamedCommaFormat(startDate);
+            output.endDate = dateFromNamedCommaFormat(endDate);
             output.accountSuffix = accountId;
         }
     } else if (currentState === State.Activity) {
@@ -59,7 +59,7 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
             const [, date, description, amountString, fees, total] = match;
             const amount = Number(sanitizeNumberString(amountString));
             const newTransaction: PaypalTransaction = {
-                date: createUtcDate(date),
+                date: dateFromSlashFormat(date),
                 description: collapseSpaces(description),
                 // this assumption that we can always use absolute value here may be wrong
                 amount: Math.abs(Number(sanitizeNumberString(total))),
@@ -73,11 +73,11 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
         }
     } else if (currentState === State.ExpenseInside && line !== '') {
         const lastExpense = output.expenses[output.expenses.length - 1];
-        lastExpense.description += collapseSpaces(line);
+        lastExpense.description += '\n' + collapseSpaces(line);
         lastExpense.originalText.push(line);
     } else if (currentState === State.IncomeInside && line !== '') {
         const lastIncome = output.incomes[output.incomes.length - 1];
-        lastIncome.description += ' ' + collapseSpaces(line);
+        lastIncome.description += '\n' + collapseSpaces(line);
         lastIncome.originalText.push(line);
     }
 
