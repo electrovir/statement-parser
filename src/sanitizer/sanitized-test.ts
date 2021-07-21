@@ -3,6 +3,7 @@ import {dirname, join, relative} from 'path';
 import {format} from 'prettier';
 import {TestInputObject} from 'test-vir';
 import {Overwrite, RequiredBy} from '../augments/type';
+import {setSanitizerMode, unsetSanitizerMode} from '../global';
 import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {ParsedOutput} from '../parser/parsed-output';
@@ -80,10 +81,12 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
     let parsedSanitized: ParsedOutput | undefined;
     let parseError: Error | undefined;
     try {
+        setSanitizerMode();
         parsedSanitized = parser.parseText({
             textLines: sanitizedText,
             ...parserInput,
         });
+        unsetSanitizerMode();
     } catch (error) {
         parseError = error;
     }
@@ -172,11 +175,13 @@ export function createSanitizedTestInput<SelectedParser extends ParserType>(
 
     const testInput: TestInputObject<ParsedOutput, Error> = {
         test: () => {
+            setSanitizerMode();
             const reParsedOutput = parser.parseText({
                 textLines: testFile.text,
                 parserOptions: testFile.parserOptions,
                 name: testFile.name,
             });
+            unsetSanitizerMode();
 
             /**
              * Make sure all the values are JSON values. For example, properties with the value of
