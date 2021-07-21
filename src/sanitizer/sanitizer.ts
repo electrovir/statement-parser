@@ -135,10 +135,15 @@ export function sanitizeStatementText(
                 indexMapping[matchIndexInString + letterIndex] =
                     newIndex + (replacement[letterIndex] ? letterIndex : replacement.length - 1);
             });
+
+            const lastIndex = newIndex + replacement.length - 1;
+            // handles when the replacement is longer than the original string
+            // so the index mapping needs to jump up at some point
+            indexMapping[match.length - 1 + matchIndexInString] = lastIndex;
+
             // map all the index mappings that follow the remapped indexes above
             indexMapping.slice(matchIndexInString + match.length).forEach((_, index) => {
-                indexMapping[matchIndexInString + match.length + index] =
-                    newIndex + replacement.length;
+                indexMapping[matchIndexInString + match.length + index] = lastIndex;
             });
 
             return replacement;
@@ -172,10 +177,21 @@ export function sanitizeStatementText(
                                       `"${currentKeyword}" was found in "${line}" initially but wasn't later!??`,
                                   );
                               }
+                              const replacement = replaceStringAtIndex(
+                                  replaceInHere,
+                                  indexMapping[indexInOriginalLine],
+                                  currentKeywordMatch,
+                                  indexMapping[
+                                      indexInOriginalLine + currentKeywordMatch.length - 1
+                                  ] -
+                                      indexMapping[indexInOriginalLine] +
+                                      1,
+                              );
 
                               if (debug) {
                                   console.log({
                                       line,
+                                      replacement,
                                       replaceInHere,
                                       mappedIndex: indexMapping[indexInOriginalLine],
                                       indexInOriginalLine,
@@ -194,16 +210,7 @@ export function sanitizeStatementText(
                                           1,
                                   });
                               }
-                              return replaceStringAtIndex(
-                                  replaceInHere,
-                                  indexMapping[indexInOriginalLine],
-                                  currentKeywordMatch,
-                                  indexMapping[
-                                      indexInOriginalLine + currentKeywordMatch.length - 1
-                                  ] -
-                                      indexMapping[indexInOriginalLine] +
-                                      1,
-                              );
+                              return replacement;
                           },
                           wholeString,
                       );

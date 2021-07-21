@@ -111,6 +111,16 @@ testGroup({
 
         sanitizerTest(
             [
+                '  5678 one thing 9876 9999                                10.63 95632 cow 789',
+                '  Van 9876                                                 11.11 cow',
+            ],
+            ['  1 a b 2 3  4,444.44 5 cow 6', '  d 7  8,888.88 cow'],
+            ['cow'],
+            'handle keywords when replacement numbers are longer',
+        );
+
+        sanitizerTest(
+            [
                 '(555)555-555 (555) 555 555 (555)-555-555 5 (555)555-ABCDEF hoops - 7 ABCDEF (HACK), 555 FA FunTimes',
             ],
             ['(1)2-3 (4) 5 6 (7)-8-9 1 (2)3-b - 4 c (d), 6 f'],
