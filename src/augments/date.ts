@@ -1,16 +1,64 @@
-export function dateFromSlashFormat(input: string, yearPrefix: number) {
-    const [month, day, yearEnding] = input.split('/');
+import {isSanitizerMode} from '../global';
+const longMonthNames = [
+    'january',
+    'february',
+    'march',
+    'april',
+    'may',
+    'june',
+    'july',
+    'august',
+    'september',
+    'october',
+    'november',
+    'december',
+];
+
+const shortMonthNames = longMonthNames.map((longMonthName) => longMonthName.slice(0, 3));
+
+export class InvalidDateError extends Error {
+    public readonly name = 'InvalidDateError';
+}
+
+export function dateFromSlashFormat(input: string, yearPrefix: number | string = '') {
+    const [month, day, rawYearEnding = ''] = input.split('/');
+
+    const yearEnding =
+        rawYearEnding.length < 4 ? `${yearPrefix}${rawYearEnding.padStart(2, '0')}` : rawYearEnding;
+
     const returnDate = createUtcDate(
-        `${yearPrefix}${yearEnding.padStart(2, '0')}-${month.padStart(2, '0')}-${day.padStart(
-            2,
-            '0',
-        )}`,
+        `${yearEnding.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
     );
     return returnDate;
 }
 
-export class InvalidDateError extends Error {
-    public readonly name = 'InvalidDateError';
+export function dateFromNamedCommaFormat(input: string) {
+    const [monthName, dayNumber, fullYear] = input.replace(',', '').split(' ');
+    if (!monthName || !dayNumber || !fullYear) {
+        throw new InvalidDateError(`Invalid ${dateFromNamedCommaFormat.name} input: ${input}`);
+    }
+
+    const longMonthIndex = longMonthNames.indexOf(monthName.toLowerCase());
+    const shortMonthIndex = shortMonthNames.indexOf(monthName.toLowerCase());
+
+    let monthIndex = longMonthIndex === -1 ? shortMonthIndex : longMonthIndex;
+
+    if (monthIndex === -1) {
+        if (isSanitizerMode()) {
+            monthIndex = 4;
+        } else {
+            throw new InvalidDateError(`Month name ${monthName} was not found.`);
+        }
+    }
+
+    const returnDate = createUtcDate(
+        `${fullYear.padStart(4, '0')}-${String(monthIndex + 1).padStart(
+            2,
+            '0',
+        )}-${dayNumber.padStart(2, '0')}`,
+    );
+
+    return returnDate;
 }
 
 export function createUtcDate(isoFormatString: string) {
