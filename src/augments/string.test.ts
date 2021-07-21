@@ -1,5 +1,5 @@
 import {testGroup} from 'test-vir';
-import {allIndexesOf, escapeForRegExp, replaceStringAtIndex} from './string';
+import {allIndexesOf, escapeForRegExp, replaceStringAtIndex, splitIncludeSplit} from './string';
 
 testGroup({
     description: allIndexesOf.name,
@@ -87,6 +87,47 @@ testGroup({
                 return allIndexesOf('You are not you but You', 'You', false);
             },
         });
+
+        runTest({
+            description: 'includes correct lengths for simple strings',
+            expect: [
+                {index: 0, length: 3},
+                {index: 12, length: 3},
+                {index: 20, length: 3},
+            ],
+            test: () => {
+                return allIndexesOf('You are not you but You', 'You', false, true);
+            },
+        });
+
+        runTest({
+            description: 'includes correct lengths for variable RegExp matches',
+            expect: [
+                {index: 0, length: 10},
+                {index: 19, length: 4},
+                {index: 28, length: 3},
+            ],
+            test: () => {
+                return allIndexesOf('YoAaAaAaAu are not yoAu but You', /Yo.*?u/i, false, true);
+            },
+        });
+
+        runTest({
+            description: 'includes correct lengths for more RegExp matches',
+            expect: [
+                {index: 6, length: 8},
+                {index: 18, length: 3},
+                {index: 41, length: 6},
+            ],
+            test: () => {
+                return allIndexesOf(
+                    'hello YoAaAaAu do you have some time for yoZzZu?',
+                    /yo.*?u/i,
+                    false,
+                    true,
+                );
+            },
+        });
     },
 });
 
@@ -168,6 +209,31 @@ testGroup({
             description: 'escaped text works as a RegExp',
             test: () => {
                 return '[*.*]'.match(new RegExp(escapeForRegExp('[*.*]')));
+            },
+        });
+    },
+});
+
+testGroup({
+    description: splitIncludeSplit.name,
+    tests: (runTest) => {
+        runTest({
+            expect: ['hello ', 'YoAaAaAu', ' do ', 'you', ' have some time for ', 'yoZzZu', '?'],
+            description: 'splits by variable length RegExp matches',
+            test: () => {
+                return splitIncludeSplit(
+                    'hello YoAaAaAu do you have some time for yoZzZu?',
+                    /yo.*?u/i,
+                    false,
+                );
+            },
+        });
+
+        runTest({
+            expect: ['hello ', 'You', ' do ', 'you', ' have some time for ', 'you', '?'],
+            description: 'splits by a simple string',
+            test: () => {
+                return splitIncludeSplit('hello You do you have some time for you?', 'you', false);
             },
         });
     },
