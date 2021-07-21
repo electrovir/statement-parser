@@ -21,12 +21,13 @@ enum ParsingTriggers {
 }
 
 const otherDebitsRegExp = /^\s+other debits$/;
-const accountSummaryRegExp = /^\s+account balance summary$/;
-const accountNumberHeaderRegExp = /account number\s+account type\s+statement period/;
-const depositsRegExp = /^\s+deposits and other credits$/;
+const accountSummaryRegExp = /^\s+account balance summary$/i;
+const accountNumberHeaderRegExp = /account number\s+account type\s+statement period/i;
+const depositsRegExp = /^\s+deposits and other credits$/i;
+const fromRegExp = /^\s{2,}FROM\s+/;
 
 export type UsaaBankAccountTransaction = ParsedTransaction & {
-    from: string;
+    from: undefined | string;
 };
 
 export type UsaaBankOutput = ParsedOutput<UsaaBankAccountTransaction>;
@@ -42,10 +43,11 @@ export const usaaBankAccountStatementParser = createStatementParser<State, UsaaB
         accountSummaryRegExp,
         accountNumberHeaderRegExp,
         depositsRegExp,
+        fromRegExp,
     ],
 });
 
-const validTransactionLineRegex = /(?:^\d{2}\/\d{2}\s+|^\s{4,})/;
+const validTransactionLineRegex = /(?:^\d{1,2}\/\d{1,2}\s+|^\s{2,})/;
 
 function performStateAction(
     currentState: State,
@@ -54,11 +56,13 @@ function performStateAction(
     parserOptions: CombineWithBaseParserOptions,
 ) {
     if (currentState === State.StatementPeriod && line !== '') {
-        const match = line.match(/([\d-]{5})\s+.+?(\d{2}\/\d{2}\/\d{2}).+?(\d{2}\/\d{2}\/\d{2})/);
+        const match = line.match(
+            /([\d-]+)\s+.+?(\d{1,2}\/\d{1,2}\/\d{1,2}).+?(\d{1,2}\/\d{1,2}\/\d{1,2})/,
+        );
         if (match) {
             const [, accountSuffix, startDateString, endDateString] = match;
-            output.accountSuffix = accountSuffix.replace('-', '').substring(0, 4);
-            if (!output.accountSuffix.match(/\d{4}/)) {
+            output.accountSuffix = accountSuffix.replace(/-/g, '').slice(-4);
+            if (!output.accountSuffix.match(/\d+/)) {
                 throw new Error(`Invalid account suffix: "${output.accountSuffix}"`);
             }
             output.startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
@@ -74,7 +78,7 @@ function performStateAction(
     ) {
         const array = currentState === State.Debit ? output.expenses : output.incomes;
 
-        const match = line.match(/^(\d{2}\/\d{2})\s+((?:\d+|,|\.)+)\s+(.*)$/);
+        const match = line.match(/^(\d{1,2}\/\d{1,2})\s+((?:\d+|,|\.)+)\s+(.*)$/);
         if (match) {
             if (!output.startDate || !output.endDate) {
                 throw new Error(
@@ -96,7 +100,7 @@ function performStateAction(
                 date: date,
                 amount: Number(sanitizeNumberString(match[2])),
                 description: collapseSpaces(match[3]).trim(),
-                from: collapseSpaces(match[3]).trim(),
+                from: undefined,
                 originalText: [line],
             });
         } else {
@@ -106,7 +110,9 @@ function performStateAction(
              * "from" is always the last line, so shift the current "from" to "method" since it wasn't the last line.
              */
             currentDebit.description += '\n' + collapseSpaces(line).trim();
-            currentDebit.from = collapseSpaces(line).trim();
+            if (line.match(fromRegExp)) {
+                currentDebit.from = collapseSpaces(line.replace(fromRegExp, '')).trim();
+            }
             currentDebit.originalText.push(line);
         }
     }

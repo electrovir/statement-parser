@@ -28,7 +28,7 @@ export function dateWithinRange(
     monthNumber: number,
     dayNumber: Number,
 ): Date {
-    const errorString = `Invalid date input: ${JSON.stringify({
+    const errorString = `${JSON.stringify({
         startDate,
         endDate,
         monthNumber,
@@ -37,24 +37,31 @@ export function dateWithinRange(
     const month = monthNumber < 10 ? `0${monthNumber}` : String(monthNumber);
     const day = dayNumber < 10 ? `0${dayNumber}` : String(dayNumber);
 
-    if (!startDate || startDate.getFullYear() === endDate.getFullYear()) {
-        const newDate = createUtcDate(`${endDate.getFullYear()}-${month}-${day}`);
+    if (!startDate || startDate.getUTCFullYear() === endDate.getUTCFullYear()) {
+        const newDate = createUtcDate(`${endDate.getUTCFullYear()}-${month}-${day}`);
         if (newDate <= endDate) {
             return newDate;
         } else {
-            return createUtcDate(`${endDate.getFullYear() - 1}-${month}-${day}`);
+            return createUtcDate(`${endDate.getUTCFullYear() - 1}-${month}-${day}`);
         }
     } else if (startDate) {
-        const dateFromStartYear = createUtcDate(`${startDate.getFullYear()}-${month}-${day}`);
-        const dateFromEndYear = createUtcDate(`${endDate.getFullYear()}-${month}-${day}`);
+        const dateFromStartYear = createUtcDate(`${startDate.getUTCFullYear()}-${month}-${day}`);
+        const dateFromStartYearPlus = createUtcDate(
+            `${startDate.getUTCFullYear() + 1}-${month}-${day}`,
+        );
+        const dateFromEndYear = createUtcDate(`${endDate.getUTCFullYear()}-${month}-${day}`);
         if (dateFromStartYear <= endDate && startDate <= dateFromStartYear) {
             return dateFromStartYear;
         } else if (dateFromEndYear <= endDate && startDate <= dateFromEndYear) {
             return dateFromEndYear;
+        } else if (dateFromStartYearPlus <= endDate && startDate <= dateFromStartYearPlus) {
+            return dateFromStartYearPlus;
         } else {
-            throw new Error(errorString);
+            throw new Error(
+                `Invalid potential dates generated, none fit between start and end: ${errorString}`,
+            );
         }
     } else {
-        throw new Error(errorString);
+        throw new Error(`Invalid inputs: ${errorString}`);
     }
 }
