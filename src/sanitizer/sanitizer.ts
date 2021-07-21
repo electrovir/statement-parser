@@ -1,6 +1,6 @@
 import {writeFileSync} from 'fs-extra';
 import {addRegExpFlags} from '../augments/regexp';
-import {allIndexesOf, replaceStringAtIndex} from '../augments/string';
+import {allIndexesOf, replaceStringAtIndex, splitIncludeSplit} from '../augments/string';
 import {parsers, ParserType} from '../parser/all-parsers';
 import {ParserKeyword} from '../parser/parser-options';
 import {temp_sanitizerRawTestFilePath, temp_sanitizerSanitizedTextFilePath} from '../repo-paths';
@@ -63,6 +63,61 @@ function getExclusiveRegExp(input: RegExp): RegExp {
     return exclusiveVersion;
 }
 
+function mapReplacement(
+    original: string,
+    matchInOriginal: string,
+    replacementIndex: number,
+    replacement: string,
+    currentMapping: number[],
+    debug = false,
+): number[] {
+    const newMapping = [...currentMapping];
+    let previousIndexToCheck = replacementIndex - 1;
+    const newIndex = previousIndexToCheck < 0 ? 0 : newMapping[previousIndexToCheck] + 1;
+
+    // map all the indexes from the match to the replacement
+    Array.from(matchInOriginal).forEach((_, letterIndex) => {
+        newMapping[replacementIndex + letterIndex] =
+            newIndex + (replacement[letterIndex] ? letterIndex : replacement.length - 1);
+    });
+
+    const lastIndex = newIndex + replacement.length - 1;
+    // handles when the replacement is longer than the original string
+    // so the index mapping needs to jump up at some point
+    newMapping[matchInOriginal.length - 1 + replacementIndex] = lastIndex;
+
+    if (debug) {
+        console.log({replacement, original, lastIndex, preSuffixMapping: newMapping});
+    }
+
+    // map all the index mappings that follow the remapped indexes above
+    newMapping.slice(replacementIndex + matchInOriginal.length).forEach((_, index) => {
+        newMapping[replacementIndex + matchInOriginal.length + index] = lastIndex;
+    });
+    return newMapping;
+}
+
+export function collapseAroundKeyword(
+    keyword: ParserKeyword,
+    line: string,
+    debug: boolean,
+): string {
+    const splits = splitIncludeSplit(line, keyword, false);
+    const collapsedSplits: string[] = splits.map((split) => {
+        if (split.match(keyword)) {
+            return split;
+        } else {
+            return split.replace(/(?:([a-z])(\s|$))+/g, '$1$2');
+        }
+    });
+
+    if (debug) {
+        console.log({line, keyword, splits, collapsedSplits});
+    }
+
+    return collapsedSplits.join('');
+}
+
 export function sanitizeStatementText(
     text: string[],
     phrasesToPreserve: ParserKeyword[] = [],
@@ -80,13 +135,11 @@ export function sanitizeStatementText(
         });
         const containsKeywords = keywordIndexes.some((phraseIndexes) => phraseIndexes.length > 0);
 
-        const indexMapping = Array.from(line).map((_, index) => index);
+        let indexMapping = Array.from(line).map((_, index) => index);
 
         const matches: string[] = [];
         const cleanedLine = line.replace(combinedRegExp, (match, matchIndexInString) => {
             matches.push(match);
-            let previousIndexToCheck = matchIndexInString - 1;
-            const newIndex = previousIndexToCheck < 0 ? 0 : indexMapping[previousIndexToCheck] + 1;
 
             let replacement: string;
 
@@ -130,30 +183,18 @@ export function sanitizeStatementText(
                 replacement = currentLetter;
             }
 
-            // map all the indexes from the match to the replacement
-            Array.from(match).forEach((_, letterIndex) => {
-                indexMapping[matchIndexInString + letterIndex] =
-                    newIndex + (replacement[letterIndex] ? letterIndex : replacement.length - 1);
-            });
-
-            const lastIndex = newIndex + replacement.length - 1;
-            // handles when the replacement is longer than the original string
-            // so the index mapping needs to jump up at some point
-            indexMapping[match.length - 1 + matchIndexInString] = lastIndex;
-
-            if (debug) {
-                console.log({replacement, line, lastIndex, preSuffixMapping: indexMapping});
-            }
-
-            // map all the index mappings that follow the remapped indexes above
-            indexMapping.slice(matchIndexInString + match.length).forEach((_, index) => {
-                indexMapping[matchIndexInString + match.length + index] = lastIndex;
-            });
+            indexMapping = mapReplacement(
+                line,
+                match,
+                matchIndexInString,
+                replacement,
+                indexMapping,
+                debug,
+            );
 
             return replacement;
         });
 
-        // uncomment for debugging
         if (debug) {
             console.log({containsKeywords, line, matches});
         }
@@ -192,10 +233,17 @@ export function sanitizeStatementText(
                                       1,
                               );
 
+                              const collapsedReplacement = collapseAroundKeyword(
+                                  currentKeyword,
+                                  replacement,
+                                  debug,
+                              );
+
                               if (debug) {
                                   console.log({
                                       line,
                                       replacement,
+                                      collapsedReplacement,
                                       replaceInHere,
                                       mappedIndex: indexMapping[indexInOriginalLine],
                                       indexInOriginalLine,
@@ -214,7 +262,8 @@ export function sanitizeStatementText(
                                           1,
                                   });
                               }
-                              return replacement;
+
+                              return collapsedReplacement;
                           },
                           wholeString,
                       );

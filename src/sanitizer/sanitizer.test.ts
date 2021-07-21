@@ -1,7 +1,36 @@
 import {testGroup, TestInputObject} from 'test-vir';
 import {trimArray} from '../augments/array';
 import {ParserKeyword} from '../parser/parser-options';
-import {sanitizeStatementText} from './sanitizer';
+import {collapseAroundKeyword, sanitizeStatementText} from './sanitizer';
+
+testGroup({
+    description: collapseAroundKeyword.name,
+    tests: (runTest) => {
+        function collapseTest(
+            keyword: ParserKeyword,
+            input: string,
+            expect: string,
+            description?: string,
+            debug = false,
+            extraOptions?: Omit<
+                Partial<TestInputObject<string[], unknown>>,
+                'description' | 'expect' | 'test'
+            >,
+        ) {
+            runTest({
+                ...(extraOptions as any),
+                description,
+                expect,
+                test: () => {
+                    return collapseAroundKeyword(keyword, input, debug);
+                },
+            });
+        }
+
+        collapseTest('cow', 'a b c d cow e f g h i', 'd cow i');
+        collapseTest('cow', '  a b c d cow e f g h i  ', '  d cow i  ');
+    },
+});
 
 testGroup({
     tests: (runTest) => {
@@ -93,7 +122,7 @@ testGroup({
                 trimArray(
                     `
                     a account number 1-2-3
-                    $4  super secret purchase g h i j k
+                    $4  super secret purchase k
                     $5  n 6
             `.split('\n'),
                 ),
@@ -114,14 +143,14 @@ testGroup({
                 '  5678 one thing 9876 9999                                10.63 95632 cow 789',
                 '  Van 9876                                                 11.11 cow',
             ],
-            ['  1 a b 2 3  4,444.44 5 cow 6', '  d 7  8,888.88 cow'],
+            ['  1 b 2 3  4,444.44 5 cow 6', '  d 7  8,888.88 cow'],
             ['cow'],
             'handle keywords when replacement numbers are longer',
         );
 
         sanitizerTest(
             ['lorem ipsum dolor sit amet, consectetur-cow adipiscing'],
-            ['a b c d e f-cow h'],
+            ['e f-cow h'],
             ['cow'],
             'handle keywords after dashes',
         );
