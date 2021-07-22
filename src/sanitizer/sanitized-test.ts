@@ -41,25 +41,32 @@ type SanitizingStatementPdf<SelectedParser extends ParserType = ParserType> = Ov
 async function validateSanitizedParsing<SelectedParser extends ParserType>(
     {parserInput, type: parserType}: SanitizingStatementPdf<SelectedParser>,
     parsedSanitized: ParsedOutput,
+    debug: boolean,
 ): Promise<void> {
     const parser = parsers[parserType];
-    if (parserInput.debug) {
+    if (debug) {
         console.log('\n/////////////////// parsing original:\n');
     }
     const parsedOriginal = await parser.parsePdf(parserInput);
 
     // quick sanity checks on the sanitized parsing output
     if (parsedSanitized.incomes.length !== parsedOriginal.incomes.length) {
+        if (debug) {
+            console.log('/////////////////// sanitized incomes');
+            console.log(parsedSanitized.incomes);
+            console.log('/////////////////// original incomes');
+            console.log(parsedOriginal.incomes);
+        }
         throw new Error(
             `Sanitized incomes count did not match the original in "${parserInput.name}"`,
         );
     }
 
-    if (parsedSanitized.expenses.length !== parsedOriginal.expenses.length && parserInput.debug) {
-        console.log('/////////////////// parsed');
-        console.log(parsedSanitized);
-        console.log('/////////////////// original');
-        console.log(parsedOriginal);
+    if (parsedSanitized.expenses.length !== parsedOriginal.expenses.length && debug) {
+        console.log('/////////////////// sanitized expenses');
+        console.log(parsedSanitized.expenses);
+        console.log('/////////////////// original expenses');
+        console.log(parsedOriginal.expenses);
         throw new Error(
             `Sanitized expenses count did not match the original in "${parserInput.name}"`,
         );
@@ -142,7 +149,7 @@ export async function writeSanitizedTestFile<SelectedParser extends ParserType =
 
     // if there was an error, don't try to parse output as there won't be any
     sanitizedTestObject.output &&
-        (await validateSanitizedParsing(statementPdf, sanitizedTestObject.output));
+        (await validateSanitizedParsing(statementPdf, sanitizedTestObject.output, debug));
 
     await ensureDir(dirname(sampleFilePath));
 
