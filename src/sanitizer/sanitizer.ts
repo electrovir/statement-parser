@@ -275,6 +275,12 @@ export function sanitizeStatementText(
                        */
                       .replace(/(?:([a-z])(\s|$))+/g, '$1$2');
 
-        return keywordsIncludedLine.replace(/ {2,}/g, '  ');
+        const spacesCollapsedLine = keywordsIncludedLine.replace(/ {2,}/g, '  ');
+
+        if (debug) {
+            console.log({keywordsIncludedLine, spacesCollapsedLine});
+        }
+
+        return spacesCollapsedLine;
     });
 }
