@@ -111,9 +111,9 @@
             {
                 "amount": 2,
                 "date": "2002-09-01T00:00:00.000Z",
-                "description": "d\nFROM f g\nh j 3",
-                "from": "f g",
-                "originalText": ["9/1  2 d", "  FROM f g", "  h  j 3"]
+                "description": "d\nFROM g\nh j 3",
+                "from": "g",
+                "originalText": ["9/1  2 d", "  FROM g", "  h  j 3"]
             },
             {
                 "amount": 6,
@@ -144,7 +144,7 @@
         "startDate": "2002-09-01T00:00:00.000Z",
         "yearPrefix": 20
     },
-    "packageVersion": "1.4.0",
+    "packageVersion": "2.0.0",
     "parserType": "usaa-bank",
     "text": [
         "a",
@@ -186,7 +186,7 @@
         "  DEPOSITS AND OTHER CREDITS",
         "z",
         "9/1  2 d",
-        "  FROM f g",
+        "  FROM g",
         "  h  j 3",
         "4/5  6 l  7",
         "  m  n  o",
