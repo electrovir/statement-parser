@@ -25,7 +25,7 @@ enum ParsingTriggers {
 }
 
 const billingPeriodRegExp = new RegExp(
-    `^\\s*${ParsingTriggers.BillingPeriod}\\s+(\\d{2}/\\d{2}/\\d{2})-(\\d{2}/\\d{2}/\\d{2})\\s*$`,
+    `^\\s*${ParsingTriggers.BillingPeriod}\\s+(\\d{1,2}/\\d{1,2}/\\d{1,2})-(\\d{1,2}/\\d{1,2}/\\d{1,2})\\s*$`,
     'i',
 );
 
@@ -131,7 +131,7 @@ function parseTransactionLine(
     }
 
     const transactionMatch = line.match(
-        /(?:\d{2}\/\d{2}\s*)?(\d{2})\/(\d{2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i,
+        /(?:\d{1,2}\/\d{1,2}\s*)?(\d{1,2})\/(\d{1,2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i,
     );
 
     if (transactionMatch) {
