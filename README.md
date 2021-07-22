@@ -1,4 +1,4 @@
-# Statement Parser
+# Statement Parser v0.0.0
 
 Parse bank and credit card statements.
 

@@ -4,17 +4,13 @@ import {format} from 'prettier';
 import {TestInputObject} from 'test-vir';
 import {Overwrite, RequiredBy} from '../augments/type';
 import {setSanitizerMode, unsetSanitizerMode} from '../global';
+import {getPackageVersion} from '../package-version';
 import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {ParsedOutput} from '../parser/parsed-output';
 import {checkThatPdfExists} from '../pdf/read-pdf';
-import {packageJson, repoRootDir, sanitizedFilesDir} from '../repo-paths';
+import {repoRootDir, sanitizedFilesDir} from '../repo-paths';
 import {sanitizePdf} from './sanitizer';
-
-const packageVersion: string = JSON.parse(readFileSync(packageJson).toString()).version;
-if (!packageVersion) {
-    throw new Error(`Package version was not found.`);
-}
 
 export type SanitizedTestFile<SelectedParser extends ParserType> = {
     text: string[];
@@ -101,7 +97,7 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
     const sanitizedTestObject: SanitizedTestFile<SelectedParser> = {
         name: parserInput.name,
         parserType,
-        packageVersion,
+        packageVersion: getPackageVersion(),
         text: sanitizedText,
         ...(parsedSanitized
             ? {output: parsedSanitized}
