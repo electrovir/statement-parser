@@ -34,6 +34,11 @@ echo "search in: $searchDir"
 echo "parser:    $specificParser"
 echo "debug:     $debug"
 
+if [ -z "$searchDir" ]; then
+    echo "Search dir is missing."
+    exit 1;
+fi
+
 npm run compile
 
 if [ -z "$specificParser" ]; then
