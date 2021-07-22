@@ -1,8 +1,8 @@
 import {getEnumTypedValues} from '../augments/object';
 import {
-    chaseCreditCardParser,
     ChaseCreditCardParsingOptions,
-} from './implemented-parsers/chase-credit-card-parser';
+    chasePrimeVisaCreditCardParser,
+} from './implemented-parsers/chase-prime-visa-credit-card-parser';
 import {citiCostcoVisaCreditCardParser} from './implemented-parsers/citi-costco-visa-credit-card-parser';
 import {PaypalOutput, paypalStatementParser} from './implemented-parsers/paypal-parser';
 import {
@@ -17,7 +17,7 @@ import {ParsedOutput} from './parsed-output';
 import {BaseParserOptions, CombineWithBaseParserOptions} from './parser-options';
 
 export enum ParserType {
-    ChaseCredit = 'chase-credit',
+    ChasePrimeVisaCredit = 'chase-prime-visa-credit',
     CitiCostcoVisaCredit = 'citi-costco-visa-credit',
     UsaaBank = 'usaa-bank',
     UsaaVisaCredit = 'usaa-visa-credit',
@@ -33,7 +33,9 @@ export function isParserType(x: any): x is ParserType {
 }
 
 export interface AllParserOptions extends Record<ParserType, Partial<BaseParserOptions>> {
-    [ParserType.ChaseCredit]: Partial<CombineWithBaseParserOptions<ChaseCreditCardParsingOptions>>;
+    [ParserType.ChasePrimeVisaCredit]: Partial<
+        CombineWithBaseParserOptions<ChaseCreditCardParsingOptions>
+    >;
     [ParserType.CitiCostcoVisaCredit]: Partial<BaseParserOptions>;
     [ParserType.Paypal]: Partial<BaseParserOptions>;
     [ParserType.UsaaBank]: Partial<BaseParserOptions>;
@@ -41,7 +43,7 @@ export interface AllParserOptions extends Record<ParserType, Partial<BaseParserO
 }
 
 export interface AllParserOutput extends Record<ParserType, ParsedOutput> {
-    [ParserType.ChaseCredit]: ParsedOutput;
+    [ParserType.ChasePrimeVisaCredit]: ParsedOutput;
     [ParserType.CitiCostcoVisaCredit]: ParsedOutput;
     [ParserType.Paypal]: PaypalOutput;
     [ParserType.UsaaBank]: UsaaBankOutput;
@@ -49,11 +51,11 @@ export interface AllParserOutput extends Record<ParserType, ParsedOutput> {
 }
 
 export const parsers = {
-    [ParserType.ChaseCredit]: chaseCreditCardParser,
+    [ParserType.ChasePrimeVisaCredit]: chasePrimeVisaCreditCardParser,
     [ParserType.CitiCostcoVisaCredit]: citiCostcoVisaCreditCardParser,
     [ParserType.Paypal]: paypalStatementParser,
     [ParserType.UsaaBank]: usaaBankAccountStatementParser,
     [ParserType.UsaaVisaCredit]: usaaVisaCreditCardStatementParser,
 } as const;
 
-chaseCreditCardParser.parseText;
+chasePrimeVisaCreditCardParser.parseText;

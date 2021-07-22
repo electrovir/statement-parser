@@ -1,5 +1,4 @@
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
-import {getEnumTypedValues} from '../../augments/object';
 import {sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -12,19 +11,19 @@ enum State {
     End = 'end',
 }
 
-enum ChaseParsingTriggers {
-    Payments = 'payments and other credits',
-    Purchase = 'purchase',
-    Purchases = 'purchases',
-    Totals = 'totals year-to-date',
-    AccountNumber = 'account number:',
-    OpeningClosingDate = 'opening/closing date',
-}
+const ChaseParsingTriggers = {
+    Payments: 'payments and other credits',
+    Purchase: /^\s*purchase\s*$/i,
+    Purchases: /^\s*purchases\s*$/i,
+    Totals: 'totals year-to-date',
+    AccountNumber: 'account number:',
+    OpeningClosingDate: 'opening/closing date',
+};
 
-const accountNumberRegExp = new RegExp(`${ChaseParsingTriggers.AccountNumber} .+(\\d{4})$`, 'i');
+const accountNumberRegExp = new RegExp(`${ChaseParsingTriggers.AccountNumber} .+(\\d{1,4})$`, 'i');
 
 const closingDateRegExp = new RegExp(
-    `${ChaseParsingTriggers.OpeningClosingDate}\\s+(\\d{2}/\\d{2}/\\d{2})\\s+-\\s+(\\d{2}/\\d{2}/\\d{2})`,
+    `${ChaseParsingTriggers.OpeningClosingDate}\\s+(\\d{1,2}/\\d{1,2}/\\d{1,2})\\s+-\\s+(\\d{1,2}/\\d{1,2}/\\d{1,2})`,
     'i',
 );
 
@@ -42,7 +41,7 @@ export const defaultChaseCreditCardParserOptions: Required<
  * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
  *   For 1991, use 19.
  */
-export const chaseCreditCardParser = createStatementParser<
+export const chasePrimeVisaCreditCardParser = createStatementParser<
     State,
     ParsedOutput,
     ChaseCreditCardParsingOptions
@@ -52,7 +51,7 @@ export const chaseCreditCardParser = createStatementParser<
     initialState: State.Header,
     endState: State.End,
     defaultParserOptions: defaultChaseCreditCardParserOptions,
-    parserKeywords: getEnumTypedValues(ChaseParsingTriggers),
+    parserKeywords: Object.values(ChaseParsingTriggers),
 });
 
 function processTransactionLine(
@@ -60,7 +59,7 @@ function processTransactionLine(
     startDate: Date,
     endDate: Date,
 ): ParsedTransaction | string {
-    const match = line.match(/^(\d{2}\/\d{2})\s+(\S.+?)\s+([\.\d,\-]+)$/);
+    const match = line.match(/^(\d{1,2}\/\d{1,2})\s+(\S.+?)\s+([\.\d,\-]+)$/);
     if (match) {
         const [, date, description, amount] = match;
         const [month, day] = date.split('/');
@@ -121,14 +120,17 @@ function nextState(currentState: State, line: string): State {
             if (line === ChaseParsingTriggers.Payments) {
                 return State.Payment;
             } else if (
-                line === ChaseParsingTriggers.Purchase ||
-                line === ChaseParsingTriggers.Purchases
+                line.match(ChaseParsingTriggers.Purchase) ||
+                line.match(ChaseParsingTriggers.Purchases)
             ) {
                 return State.Purchase;
             }
             break;
         case State.Payment:
-            if (line === ChaseParsingTriggers.Purchase || line === ChaseParsingTriggers.Purchases) {
+            if (
+                line.match(ChaseParsingTriggers.Purchase) ||
+                line.match(ChaseParsingTriggers.Purchases)
+            ) {
                 return State.Purchase;
             }
             break;
