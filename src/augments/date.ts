@@ -105,9 +105,13 @@ export function dateWithinRange(
         } else if (dateFromStartYearPlus <= endDate && startDate <= dateFromStartYearPlus) {
             return dateFromStartYearPlus;
         } else {
-            throw new Error(
-                `Invalid potential dates generated, none fit between start and end: ${errorString}`,
-            );
+            if (isSanitizerMode()) {
+                return dateFromStartYear;
+            } else {
+                throw new Error(
+                    `Invalid potential dates generated, none fit between start and end: ${errorString}`,
+                );
+            }
         }
     } else {
         throw new Error(`Invalid inputs: ${errorString}`);
