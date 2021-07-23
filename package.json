@@ -63,5 +63,9 @@
         "prettier-plugin-packagejson": "^2.2.11",
         "prettier-plugin-sort-json": "^0.0.2",
         "typescript": "^4.3.5"
+    },
+    "engines": {
+        "node": ">=12",
+        "npm": ">=7"
     }
 }

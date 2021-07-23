@@ -7,10 +7,11 @@ export type StatementPdf<SelectedParser extends ParserType = ParserType> = {
     type: SelectedParser;
 };
 
-export type ParsedPdf<SelectedParser extends ParserType = ParserType> =
+export type ParsedPdf<SelectedParser extends ParserType = ParserType> = Readonly<
     StatementPdf<SelectedParser> & {
         data: ParsedOutput;
-    };
+    }
+>;
 
 export async function parsePdfs(
     pdfs: Readonly<Readonly<StatementPdf>[]>,
