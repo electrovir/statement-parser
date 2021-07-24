@@ -1,5 +1,17 @@
 {
-    "ignorePaths": ["node_modules", "package-lock.json", "dist", "downloads"],
+    "ignorePaths": ["node_modules", "package-lock.json", "dist", "files"],
     "version": "0.1",
-    "words": ["electrovir", "packagejson", "accum", "citi", "paypal", "pdfs", "usaa"]
+    "words": [
+        "electrovir",
+        "packagejson",
+        "accum",
+        "citi",
+        "paypal",
+        "pdfs",
+        "usaa",
+        "prettierrc",
+        "amet",
+        "consectetur",
+        "adipiscing"
+    ]
 }

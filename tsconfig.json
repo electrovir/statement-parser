@@ -4,8 +4,11 @@
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "module": "commonjs",
+        "noImplicitAny": true,
         "noImplicitReturns": true,
+        "noImplicitThis": true,
         "outDir": "dist",
+        "skipDefaultLibCheck": true,
         "strict": true,
         "target": "es6"
     },
