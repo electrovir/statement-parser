@@ -1,12 +1,9 @@
-name: tests
+name: branch-tests
 
 on:
     push:
         branches:
             - '**'
-    pull_request:
-        branches:
-            - 'master'
 
 jobs:
     build:
