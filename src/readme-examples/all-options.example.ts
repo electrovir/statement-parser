@@ -3,10 +3,11 @@ import {parsePdfs, ParserType} from '..';
 parsePdfs([
     {
         parserInput: {
+            /** FilePath is always required. What would the parser do without it? */
             filePath: 'my/paypal/file.pdf',
             /**
              * Optional name property to help identify the pdf if any errors occur. (By default file
-             * names will be used in errors so this is only for human readability if desired.)
+             * paths will be used in errors so this is only for human readability if desired.)
              */
             name: 'pdf with all options',
             /**
@@ -19,10 +20,11 @@ parsePdfs([
              * slightly different parser options.
              */
             parserOptions: {
-                /** See Year Prefix section in the README for details on this property. */
+                /** Every parser includes this property. See Year prefix section in the README for details. */
                 yearPrefix: 19,
             },
         },
+        /** Type is always required. Without it, the package doesn't know which parser to use. */
         type: ParserType.Paypal,
     },
     {
@@ -30,8 +32,9 @@ parsePdfs([
             filePath: 'my/chase-prime-visa-credit/file.pdf',
             parserOptions: {
                 /**
-                 * Example of extra, ParserType dependent, parser option that will change the
-                 * parsing behavior.
+                 * Example of an extra ParserType specific option that will change the parsing
+                 * behavior. This option is not valid for any of the other parser types except for
+                 * the ParserType.ChasePrimeVisaCredit parser.
                  */
                 includeMultiLineDescriptions: true,
             },

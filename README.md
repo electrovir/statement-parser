@@ -1,4 +1,4 @@
-# Statement Parser
+# statement-parser
 
 [![tests](https://github.com/electrovir/statement-parser/workflows/tests/badge.svg)](https://github.com/electrovir/statement-parser/actions)
 
@@ -12,17 +12,17 @@ See the [Parsers](#parsers) section below for the available parsers.
 
 # Usage
 
-Install from the [statement-parser npm package](https://www.npmjs.com/package/statement-parser).
+Install from the [`statement-parser` npm package](https://www.npmjs.com/package/statement-parser).
 
 ```sh
 npm i statement-parser
 ```
 
-Tested on Node.js versions 12.x and 14.x in combination with the latest macOS, Ubuntu, and Windows.
+Currently tested on Node.js versions 12.x and 14.x in combination with the latest macOS, Ubuntu, and Windows.
 
 ## Api
 
-The high level, most common function to be used is the asynchronous `parsePdfs` function. Simply pass in an array that has details for each PDF file you wish to parse. Note that there is no synchronous alternative. See the example below which is parsing two different files:
+The high level most useful api function is the asynchronous [`parsePdfs`](https://github.com/electrovir/statement-parser/tree/master/src/parser/parse-api.ts) function. Simply pass in an array that has details for each PDF file you wish to parse. Note that there is no synchronous alternative.
 
 <!-- api-simple-parse.example.ts -->
 
@@ -39,7 +39,7 @@ parsePdfs([
 ]).then((results) => console.log(results));
 ```
 
-`parsePdfs` accepts an array of [`StatementPdf`](https://github.com/electrovir/statement-parser/tree/master/src/parser/parse-api.ts) objects. Each element in the array should look like the following:
+`parsePdfs` accepts an array of [`StatementPdf`](https://github.com/electrovir/statement-parser/tree/master/src/parser/parse-api.ts) objects. Thus, each element in the array should look like the following:
 
 <!-- api-simple-parse-inputs.example.ts -->
 
@@ -96,15 +96,16 @@ ParserType.Paypal;
     <!-- all-options.example.ts -->
 
     ```typescript
-    import {parsePdfs, ParserType} from 'statement-parser';
+    import {parsePdfs, ParserType} from '..';
 
     parsePdfs([
         {
             parserInput: {
+                /** FilePath is always required. What would the parser do without it? */
                 filePath: 'my/paypal/file.pdf',
                 /**
                  * Optional name property to help identify the pdf if any errors occur. (By default file
-                 * names will be used in errors so this is only for human readability if desired.)
+                 * paths will be used in errors so this is only for human readability if desired.)
                  */
                 name: 'pdf with all options',
                 /**
@@ -117,10 +118,11 @@ ParserType.Paypal;
                  * slightly different parser options.
                  */
                 parserOptions: {
-                    /** See Year Prefix section in the README for details on this property. */
+                    /** Every parser includes this property. See Year prefix section in the README for details. */
                     yearPrefix: 19,
                 },
             },
+            /** Type is always required. Without it, the package doesn't know which parser to use. */
             type: ParserType.Paypal,
         },
         {
@@ -128,8 +130,9 @@ ParserType.Paypal;
                 filePath: 'my/chase-prime-visa-credit/file.pdf',
                 parserOptions: {
                     /**
-                     * Example of extra, ParserType dependent, parser option that will change the
-                     * parsing behavior.
+                     * Example of an extra ParserType specific option that will change the parsing
+                     * behavior. This option is not valid for any of the other parser types except for
+                     * the ParserType.ChasePrimeVisaCredit parser.
                      */
                     includeMultiLineDescriptions: true,
                 },
@@ -139,7 +142,7 @@ ParserType.Paypal;
     ]).then((result) => console.log(result));
     ```
 
--   If you're less familiar with asynchronous programming, here's a good way (not the _only_ way) to deal with that:
+-   If you're less familiar with asynchronous programming, here's a good way (but not the _only_ way) to deal with that:
 
     <!-- better-async.example.ts -->
 
@@ -169,7 +172,7 @@ ParserType.Paypal;
     }
     ```
 
--   Parsing files directly with a single parser:
+-   Parsing files can be done directly with a single parser:
 
     <!-- direct-parsing.example.ts -->
 
@@ -180,7 +183,7 @@ ParserType.Paypal;
     parser.parsePdf({filePath: 'my/paypal/file.pdf'}).then((result) => console.log(result));
     ```
 
--   With a single parser you can parse text lines directly (if somehow that's how your statements are stored):
+-   With a single parser you can parse text lines directly (if somehow that's how your statements are stored), rather than using a PDF file:
 
     <!-- direct-text-parsing.example.ts -->
 
@@ -191,19 +194,19 @@ ParserType.Paypal;
     parser.parseText({textLines: ['text here', 'line 2 here', 'line 3', 'etc.']});
     ```
 
-## Year Prefix
+## Year prefix
 
-**You don't even need to think about this parameter** unless you're parsing statements from the `1900`s or this somehow lasts till the year `2100`.
+**You don't even need to think about this option** unless you're parsing statements from the `1900`s or this package is somehow relevant still in the year `2100`.
 
-Year prefix is an optional parameter in both the script and CLI usages. As most statements only include an abbreviated year (like `09` or `16`), the millennium, or "year prefix" must be assumed. This value defaults to `20`. Thus, any statements getting parsed from the year `2000` to the year `2099` (inclusive) don't need to override this parameter.
+Year prefix is an optional parser option. Many statements only include an abbreviated year (like `09` or `16`). As such, the first two digits of the full year, or "year prefix" must be assumed. This value defaults to `20`. Thus, any statements getting parsed from the year `2000` to the year `2099` (inclusive) don't need to set this option.
 
 # Development
 
-Extra development work is welcome! This can take the form of one of the following:
+Contributions are welcome! This can take the form of one of the following:
 
 -   adding [fixes to current parsers](#fixing-current-parsers)
 -   creating [entirely new parsers](#creating-a-new-parser)
--   fixing or filing [general bugs](#general-bug-fixes) (including sanitization bugs)
+-   fixing or filing [bugs](#general-bug-fixes) (including sanitization bugs)
 
 Each change must be accompanied by a new test to make sure that what you add does not get broken.
 
@@ -211,47 +214,51 @@ Each change must be accompanied by a new test to make sure that what you add doe
 
 ## Fixing current parsers
 
-If you're encountering errors when parsing one of your statement PDFs (if it's hooked up to the correct `ParserType`), do one of the following:
+If you're encountering errors when parsing one of your statement PDFs (when hooked up to the correct `ParserType` for course), an already implemented parser may need fixing. This can be done through one of the following:
 
--   add a new parser option to handle the edge case
+-   add a new parser option to handle an edge case
 -   fix parser code to not fail in the first place
 
-Make sure to add a sanitized file test (see [sanitizing pdfs](#sanitizing-pdfs) for details) and run tests (see [testing](#testing) for details) before committing.
+Make sure to add a sanitized file test (see [sanitizing pdfs](#sanitizing-pdfs)) and run tests (see [testing](#testing)) before committing.
 
 ## Creating a new parser
 
-If you find that your statement type does not even have a parser implemented already, you can add one! See [`example-parser.ts`](https://github.com/electrovir/statement-parser/tree/master/src/parser/implemented-parsers/example-parser.ts) for a good starting point.
+If you find that your statement PDF is coming from a bank or credit card that this package does even have a parser for yet, you can add that parser! See [`example-parser.ts`](https://github.com/electrovir/statement-parser/tree/master/src/parser/implemented-parsers/example-parser.ts) for a good starting point.
 
 ## General bug fixes
 
-1. Add a test that fails before the bug fix. See [Adding tests](#adding-tests) for details.
-2. Commit the new test separately.
-3. Fix the bug.
-4. Verify that all other tests still pass. See [Running tests](#running-tests) for details.
-5. Commit and push!
+1. Add a test that fails because of the bug. See [Adding tests](#adding-tests) for details.
+2. Verify that the test fails before fixing the bug.
+3. Commit the new test.
+4. Fix the bug.
+5. Verify that your test from step 2 now passes and all other tests still pass. See [Running tests](#running-tests) for details.
+6. Commit, push, open a PR!
 
 ## Sanitizing PDFs
 
-1.  Run `npm run sanitize` on the statement PDF in question.
+1.  Run `npm run sanitize` with the relevant arguments.
     -   For argument help run the following: `npm run sanitize -- --help`
-2.  Extra super double check that the sanitized text does not contain any confidential information in it, such as names of people or businesses, exact transaction amounts, or dates.
-    -   If it does, please [open a bug](https://github.com/electrovir/statement-parser/issues) or fix the bug.
-3.  Run tests: `npm test`. See the [testing](#testing) section for more details.
-4.  Verify that your sanitized `.json` output has been added to the appropriate parser folder in `files/sample-files/sanitized`.
+2.  **Extra super quadruple check** that the sanitized `.json` file does not contain any confidential information in it, such as names of people or businesses, exact transaction amounts, actual dates, etc.
+    -   If there is confidential information, please [open a bug](https://github.com/electrovir/statement-parser/issues) or fix the bug.
+3.  Run tests. (See [Running tests](#running-tests) for details.)
+4.  Verify that your sanitized `.json` file has been added to the appropriate parser folder in `files/sample-files/sanitized`.
 5.  Commit away!
 
 ## Testing
 
 ### Running tests
 
--   to run all tests: `npm test`
--   to run a specific test: `npm run compile && test-vir dist/path-to/test-file.test.js`
-    -   note that `dist` must be at the start of the file path.
+-   to run all TypeScript tests (usually all you need): `npm test`
+-   to test a specific file: `npm run test:file path/to/file.ts`
+    -   example: `npm run test:file repo-paths.ts`
+-   to run _all_ repository tests (this is what runs in GitHub Actions): `npm run test:full`
 
 ### Adding tests
 
-1. If it does not exist already, add a new `X.test.ts` file next to the file that will be tested, where `X` is the name of the file to be tested.
-2. If it does not exist already, add a new `testGroup` call for the function that will be tested.
+1. If it does not exist already, add a new `X.test.ts` file next to the file that contains the function to be tested, where `X` is the name of the file to be tested.
+2. If it does not exist already, add a new `testGroup()` call (imported from `test-vir`) for the function that will be tested.
 3. Add new `runTest` calls for the tests you want to add.
+
+See other test files for examples, such as [`array.test.ts`](https://github.com/electrovir/statement-parser/tree/master/src/augments/array.test.ts).
 
 > v2.0.0
