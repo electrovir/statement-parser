@@ -28,13 +28,8 @@ export const CliErrors = {
     },
 };
 
-async function runSanitization<SelectedParser extends ParserType>({
-    parserType,
-    inputPdfFile,
-    outputFileName,
-    debug,
-}: CliArgs<SelectedParser>) {
-    const parserInput: StatementPdf<SelectedParser> = {
+async function runSanitization({parserType, inputPdfFile, outputFileName, debug}: CliArgs) {
+    const parserInput: StatementPdf = {
         parserInput: {
             filePath: relative(repoRootDir, inputPdfFile),
             debug,
@@ -47,16 +42,14 @@ async function runSanitization<SelectedParser extends ParserType>({
     return {sanitizedTestFilePath: path, result};
 }
 
-type CliArgs<SelectedParser extends ParserType = ParserType> = {
-    parserType: SelectedParser;
+type CliArgs = {
+    parserType: ParserType;
     inputPdfFile: string;
     outputFileName: string;
     debug: boolean;
 };
 
-function getValidatedArgs<SelectedParser extends ParserType = ParserType>(
-    args: string[],
-): CliArgs<SelectedParser> {
+function getValidatedArgs(args: string[]): CliArgs {
     const parserTypeArg = args[0];
     const inputPdfFilePathArg = args[1];
     const outputFileNameArg = args[2];
@@ -92,17 +85,14 @@ function getValidatedArgs<SelectedParser extends ParserType = ParserType>(
     }
 
     return {
-        parserType: parserTypeArg as SelectedParser,
+        parserType: parserTypeArg,
         inputPdfFile: inputPdfFilePathArg,
         outputFileName: outputFileNameArg,
         debug: !!debugArg,
     };
 }
 
-const helpMessage = `Usage: node ${relative(
-    process.cwd(),
-    __filename,
-)} parser-type input-pdf-file.pdf output-sanitized-text-file.json [--debug]\nIf run through "npm sanitize" make sure to pass -- before the debug input, like so: npm sanitize x x x -- --debug`;
+const helpMessage = `Usage: npm run sanitize parser-type input-pdf-file.pdf output-sanitized-text-file.json [-- --debug]\nMake sure to pass -- before the debug input, like so: npm sanitize x x x -- --debug`;
 
 /** Exported just so we can test it without running bash scripts */
 export async function sanitizeForTestFileCli(args: string[], printHelp = true) {

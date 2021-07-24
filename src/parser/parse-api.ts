@@ -2,19 +2,36 @@ import {AllParserOptions, parsers, ParserType} from './all-parsers';
 import {ParsedOutput} from './parsed-output';
 import {ParsePdfFunctionInput} from './parser-function';
 
-export type StatementPdf<SelectedParser extends ParserType = ParserType> = {
-    parserInput: ParsePdfFunctionInput<AllParserOptions[SelectedParser]>;
-    type: SelectedParser;
-};
+export type StatementPdf =
+    | {
+          parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.ChasePrimeVisaCredit]>;
+          type: ParserType.ChasePrimeVisaCredit;
+      }
+    | {
+          parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.CitiCostcoVisaCredit]>;
+          type: ParserType.CitiCostcoVisaCredit;
+      }
+    | {
+          parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.UsaaBank]>;
+          type: ParserType.UsaaBank;
+      }
+    | {
+          parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.UsaaVisaCredit]>;
+          type: ParserType.UsaaVisaCredit;
+      }
+    | {
+          parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.Paypal]>;
+          type: ParserType.Paypal;
+      };
 
-export type ParsedPdf<SelectedParser extends ParserType = ParserType> = Readonly<
-    StatementPdf<SelectedParser> & {
+export type ParsedPdf = Readonly<
+    StatementPdf & {
         data: ParsedOutput;
     }
 >;
 
 export async function parsePdfs(
-    pdfs: Readonly<Readonly<StatementPdf>[]>,
+    pdfs: StatementPdf[],
     debug = false,
 ): Promise<Readonly<Readonly<ParsedPdf>[]>> {
     const parsedPdfs: Readonly<Readonly<ParsedPdf>[]> = await Promise.all(

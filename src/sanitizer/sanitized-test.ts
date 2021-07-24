@@ -29,13 +29,13 @@ export type SanitizedTestFile<SelectedParser extends ParserType> = {
       }
 );
 
-type SanitizingStatementPdf<SelectedParser extends ParserType = ParserType> = Overwrite<
-    StatementPdf<SelectedParser>,
-    {parserInput: RequiredBy<StatementPdf<SelectedParser>['parserInput'], 'name' | 'debug'>}
+type SanitizingStatementPdf = Overwrite<
+    StatementPdf,
+    {parserInput: RequiredBy<StatementPdf['parserInput'], 'name' | 'debug'>}
 >;
 
-async function validateSanitizedParsing<SelectedParser extends ParserType>(
-    {parserInput, type: parserType}: SanitizingStatementPdf<SelectedParser>,
+async function validateSanitizedParsing(
+    {parserInput, type: parserType}: SanitizingStatementPdf,
     parsedSanitized: ParsedOutput,
     debug: boolean,
 ): Promise<void> {
@@ -76,7 +76,7 @@ function getSanitizedName(filePath: string): string {
 async function createSanitizedTestFileObject<SelectedParser extends ParserType>({
     parserInput,
     type: parserType,
-}: SanitizingStatementPdf<SelectedParser>): Promise<SanitizedTestFile<SelectedParser>> {
+}: SanitizingStatementPdf): Promise<SanitizedTestFile<SelectedParser>> {
     const parser = parsers[parserType];
 
     const sanitizedText = await sanitizePdf(parserInput.filePath, parserType, parserInput.debug);
@@ -113,14 +113,14 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
 
 const prettierConfig = JSON.parse(readFileSync(join(repoRootDir, '.prettierrc.json')).toString());
 
-export async function writeSanitizedTestFile<SelectedParser extends ParserType = ParserType>(
-    rawStatementPdf: StatementPdf<SelectedParser>,
+export async function writeSanitizedTestFile(
+    rawStatementPdf: StatementPdf,
     outputFileName: string,
     debug: boolean = rawStatementPdf.parserInput.debug || false,
 ) {
     const sampleFilePath = join(sanitizedFilesDir, rawStatementPdf.type, outputFileName);
 
-    const statementPdf: SanitizingStatementPdf<SelectedParser> = {
+    const statementPdf: SanitizingStatementPdf = {
         ...rawStatementPdf,
         parserInput: {
             name: getSanitizedName(sampleFilePath),
