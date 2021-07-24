@@ -2,8 +2,6 @@ name: branch-tests
 
 on:
     push:
-        branches:
-            - '**'
         branches-ignore:
             - 'master'
 
