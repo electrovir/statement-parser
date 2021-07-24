@@ -7,7 +7,7 @@ import {repoRootDir} from './repo-paths';
 testGroup({
     description: `readme tests`,
     tests: (runTest) => {
-        async function readFirstLineOfReadme() {
+        async function readVersionLineOfReadme() {
             const readmePath = join(repoRootDir, 'README.md');
 
             const allReadmeText: string[] = (await readFile(readmePath)).toString().split('\n');
@@ -16,13 +16,13 @@ testGroup({
                 throw new Error(`${readmePath} file is empty.`);
             }
 
-            const firstLine = allReadmeText[0];
+            const versionLine = allReadmeText[allReadmeText.length - 2];
 
-            if (!firstLine) {
-                throw new Error(`First line of readme is empty.`);
+            if (!versionLine) {
+                throw new Error(`version line of README is empty.`);
             }
 
-            return firstLine;
+            return versionLine;
         }
 
         runTest({
@@ -34,26 +34,27 @@ testGroup({
         });
 
         runTest({
-            description: 'verify assumptions about first README line',
-            expect: '# Statement Parser v',
+            description: 'verify that version line of README is read',
+            expect: true,
             test: async () => {
-                const firstLine = await readFirstLineOfReadme();
+                const firstLine = await readVersionLineOfReadme();
 
-                return firstLine.replace(/v\d\.\d\.\d/, 'v');
+                return firstLine.match(/v\d+\.\d+\.\d+/) !== null;
             },
         });
 
         runTest({
             /**
-             * If this fails it indicates that we need to update the README.md file, likely more
-             * than just updating the version number.
+             * If this fails it indicates that we need to update the README.md file. This will
+             * likely require updating the documentation itself (to match the new version's
+             * changes), not just incrementing the number.
              */
             description: 'check that README version number is up to date',
             expect: getPackageVersion(),
             test: async () => {
-                const firstLine = await readFirstLineOfReadme();
+                const firstLine = await readVersionLineOfReadme();
 
-                const readmeVersion = firstLine.trim().replace(/.*statement\s+parser.*?v/i, '');
+                const readmeVersion = firstLine.trim().replace(/^.*v/i, '');
 
                 return readmeVersion;
             },
