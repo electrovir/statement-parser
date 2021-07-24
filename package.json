@@ -41,10 +41,11 @@
         "format:check": "npm run format:base -- --check",
         "format": "npm run format:base -- --write",
         "prepublishOnly": "npm install && npm run test && npm run spellcheck",
-        "sanitize": "npm run compile && node dist/sanitizer/sanitize-for-test-file-cli.js",
-        "sanitize:no-compile": "node dist/sanitizer/sanitize-for-test-file-cli.js",
         "sanitize:all": "./bulk-sanitize.sh files/downloads",
+        "sanitize:no-compile": "node dist/sanitizer/sanitize-for-test-file-cli.js",
+        "sanitize": "npm run compile && node dist/sanitizer/sanitize-for-test-file-cli.js",
         "spellcheck": "cspell --no-progress --unique \"./**/*\"",
+        "test:file": "./test-specific-file.sh",
         "test:full": "npm run test && npm run spellcheck -- --no-progress && npm run format:check",
         "test": "npm run compile && test-vir \"./**/!(*.type).test.js\""
     },
