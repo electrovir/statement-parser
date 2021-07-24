@@ -38,10 +38,6 @@ type CitiCostcoVisaCreditIntermediateTransaction = Overwrite<
     }
 >;
 
-/**
- * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
 export const citiCostcoVisaCreditCardParser = createStatementParser<State, ParsedOutput>({
     action: performStateAction,
     next: nextState,

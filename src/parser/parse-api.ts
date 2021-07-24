@@ -5,22 +5,27 @@ import {ParsePdfFunctionInput} from './parser-function';
 export type StatementPdf =
     | {
           parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.ChasePrimeVisaCredit]>;
+          /** Type is always required. Without it, the package doesn't know which parser to use. */
           type: ParserType.ChasePrimeVisaCredit;
       }
     | {
           parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.CitiCostcoVisaCredit]>;
+          /** Type is always required. Without it, the package doesn't know which parser to use. */
           type: ParserType.CitiCostcoVisaCredit;
       }
     | {
           parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.UsaaBank]>;
+          /** Type is always required. Without it, the package doesn't know which parser to use. */
           type: ParserType.UsaaBank;
       }
     | {
           parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.UsaaVisaCredit]>;
+          /** Type is always required. Without it, the package doesn't know which parser to use. */
           type: ParserType.UsaaVisaCredit;
       }
     | {
           parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.Paypal]>;
+          /** Type is always required. Without it, the package doesn't know which parser to use. */
           type: ParserType.Paypal;
       };
 

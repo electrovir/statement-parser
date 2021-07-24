@@ -37,10 +37,6 @@ export const defaultChaseCreditCardParserOptions: Required<
     includeMultiLineDescriptions: true,
 };
 
-/**
- * @param yearPrefix The first two digits of the current year. Example: for the year 2010, use 20.
- *   For 1991, use 19.
- */
 export const chasePrimeVisaCreditCardParser = createStatementParser<
     State,
     ParsedOutput,

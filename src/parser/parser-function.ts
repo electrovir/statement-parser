@@ -2,18 +2,27 @@ import {ParsedOutput} from './parsed-output';
 import {CombineWithBaseParserOptions} from './parser-options';
 
 export type SharedParserFunctionInputs<ParserOptions extends object | undefined> = {
-    /** Set to true to turn on additional logging */
+    /**
+     * Optional debug property to see LOTS of output which shows the internal state machine
+     * progressing over each line of the file.
+     */
     debug?: boolean;
-    /** Parser options that vary based on the parser being used */
+    /**
+     * Optional input that provides additional parser configuration. Each parser type has slightly
+     * different parser options.
+     */
     parserOptions?: Partial<CombineWithBaseParserOptions<ParserOptions>>;
-    /** Used to identify parsing errors. */
+    /**
+     * Optional name property to help identify the pdf if any errors occur. (By default file paths
+     * will be used in errors so this is only for human readability if desired.)
+     */
     name?: string;
 };
 
 /** Parse PDF files directly. */
 
 export type ParsePdfFunctionInput<ParserOptions extends object | undefined = undefined> = {
-    /** FilePath Path of pdf to read */
+    /** FilePath is always required. What would the parser do without it? */
     filePath: string;
 } & SharedParserFunctionInputs<ParserOptions>;
 

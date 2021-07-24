@@ -8,6 +8,7 @@ export type BaseParserOptions = {
 };
 
 export const defaultBaseParserOptions: Required<Readonly<BaseParserOptions>> = {
+    /** Every parser includes this option. See Year prefix section in the README for details. */
     yearPrefix: 20,
 } as const;
 
