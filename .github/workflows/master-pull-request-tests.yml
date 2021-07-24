@@ -1,11 +1,8 @@
-name: branch-tests
+name: master-tests
 
 on:
-    push:
-        branches:
-            - '**'
     pull_request:
-        branches-ignore:
+        branches:
             - 'master'
 
 jobs:
