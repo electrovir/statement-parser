@@ -1,6 +1,6 @@
 # statement-parser
 
-[![tests](https://github.com/electrovir/statement-parser/workflows/tests/badge.svg)](https://github.com/electrovir/statement-parser/actions)
+[![tests](https://github.com/electrovir/statement-parser/workflows/tests/badge.svg)](https://github.com/electrovir/statement-parser/actions/workflows/master-tests.yml)
 
 Parse bank and credit card statements.
 
