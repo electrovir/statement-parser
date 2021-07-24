@@ -1,4 +1,3 @@
-import {join, sep} from 'path';
 import {testGroup} from 'test-vir';
 import {runBashCommand} from './bash-scripting';
 
@@ -31,7 +30,6 @@ async function extractPackFiles(): Promise<string[]> {
         }
         return match[1];
     });
-    console.log(extractedFiles);
     return extractedFiles;
 }
 
@@ -92,8 +90,8 @@ testGroup(async (runTest) => {
         'LICENSE',
         'README.md',
         'package.json',
-        join('dist', 'index.js'),
-        join('dist', 'index.d.ts'),
+        'dist/index.js',
+        'dist/index.d.ts',
     ];
 
     runTest({
@@ -115,7 +113,7 @@ testGroup(async (runTest) => {
             return packFiles.filter((file) => {
                 if (importantFiles.includes(file)) {
                     return false;
-                } else if (file.startsWith(`dist${sep}`)) {
+                } else if (file.startsWith(`dist/`)) {
                     return false;
                 } else {
                     return true;
@@ -163,7 +161,7 @@ testGroup(async (runTest) => {
             const packFiles = await extractPackFiles();
 
             const badFiles = packFiles.filter((file) => {
-                if (file.startsWith(`dist${sep}`)) {
+                if (file.startsWith(`dist/`)) {
                     return !file.endsWith('.d.ts') && !file.endsWith('.js');
                 } else {
                     return false;
