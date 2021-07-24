@@ -10,7 +10,7 @@ prettierignore
 dist/sanitizer
 repo-paths*
 bulk-sanitize.sh
-.github
+.git*
 dist/readme*
 dist/package-version*
 dist/bash*
