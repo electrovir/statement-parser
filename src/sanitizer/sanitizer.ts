@@ -1,4 +1,4 @@
-import {writeFileSync} from 'fs-extra';
+import {writeFile} from 'fs-extra';
 import {addRegExpFlags} from '../augments/regexp';
 import {allIndexesOf, replaceStringAtIndex, splitIncludeSplit} from '../augments/string';
 import {parsers, ParserType} from '../parser/all-parsers';
@@ -14,13 +14,13 @@ export async function sanitizePdf(
 
     const rawText = await parser.convertPdfToText(filePath);
 
-    writeFileSync(temp_sanitizerRawTestFilePath, rawText.join('\n'));
+    await writeFile(temp_sanitizerRawTestFilePath, rawText.join('\n'));
     if (debug) {
         console.info(`Pdf text output written (for debugging) to ${temp_sanitizerRawTestFilePath}`);
     }
 
     const sanitizedText = sanitizeStatementText(rawText, parser.parserKeywords, debug);
-    writeFileSync(temp_sanitizerSanitizedTextFilePath, sanitizedText.join('\n'));
+    await writeFile(temp_sanitizerSanitizedTextFilePath, sanitizedText.join('\n'));
     if (debug) {
         console.info(
             `Sanitized PDF text written (for debugging) to ${temp_sanitizerSanitizedTextFilePath}`,

@@ -57,5 +57,3 @@ export const parsers = {
     [ParserType.UsaaBank]: usaaBankAccountStatementParser,
     [ParserType.UsaaVisaCredit]: usaaVisaCreditCardStatementParser,
 } as const;
-
-chasePrimeVisaCreditCardParser.parseText;
