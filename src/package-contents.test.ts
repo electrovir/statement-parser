@@ -24,13 +24,15 @@ async function extractPackFiles(): Promise<string[]> {
     const raw = await getRawPackFileList();
     const lines = raw.slice(1, raw.length - 1);
 
-    return lines.map((line) => {
+    const extractedFiles = lines.map((line) => {
         const match = line.match(fileLineRegExp);
         if (!match) {
             throw new Error(`Could not match npm pack file line "${line}" with ${fileLineRegExp}`);
         }
         return match[1];
     });
+    console.log(extractedFiles);
+    return extractedFiles;
 }
 
 testGroup(async (runTest) => {
