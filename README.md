@@ -261,4 +261,4 @@ If you find that your statement PDF is coming from a bank or credit card that th
 
 See other test files for examples, such as [`array.test.ts`](https://github.com/electrovir/statement-parser/tree/master/src/augments/array.test.ts).
 
-> v2.1.0
+> v2.0.0
