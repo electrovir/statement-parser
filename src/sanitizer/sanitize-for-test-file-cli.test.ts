@@ -89,10 +89,10 @@ testGroup((runTest) => {
         test: testTempOutputFile([ParserType.Paypal, dummyPdfPath, 'output-file']),
     });
     runTest({
-        description: 'tests dummy pdf file',
+        description: 'parse dummy pdf file',
         expectError: {
             errorMessage:
-                /Failed to parse the original PDF before trying to sanitize it: Error: Reached end of input before hitting end state on .+/,
+                /Failed to parse the original PDF before trying to sanitize it: Error: EndStateNotReachedError: Reached end of input before hitting end state\. .+/,
         },
         test: testTempOutputFile([ParserType.Paypal, dummyPdfPath, 'dummy-output-file.json']),
     });

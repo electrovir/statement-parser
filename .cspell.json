@@ -2,16 +2,19 @@
     "ignorePaths": ["node_modules", "package-lock.json", "dist", "files"],
     "version": "0.1",
     "words": [
+        "accum",
+        "adipiscing",
+        "amet",
+        "citi",
+        "consectetur",
         "electrovir",
         "packagejson",
-        "accum",
-        "citi",
         "paypal",
         "pdfs",
-        "usaa",
         "prettierrc",
-        "amet",
-        "consectetur",
-        "adipiscing"
+        "repo's",
+        "transpiled",
+        "transpiling",
+        "usaa"
     ]
 }

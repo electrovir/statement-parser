@@ -1,4 +1,5 @@
 import {parsePageItems} from 'pdf-text-reader';
+import {TextItem} from 'pdfjs-dist/types/display/api';
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
 import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
@@ -61,16 +62,19 @@ async function readCitiCostcoVisaPdf(path: string): Promise<string[][]> {
      */
     const firstPageItems = (await (await doc.getPage(1)).getTextContent()).items;
     const rightColumnItem = firstPageItems.find(
-        (item) => item.str === ParsingTriggers.AccountSummary,
+        (item) => 'str' in item && item.str === ParsingTriggers.AccountSummary,
     );
     if (!rightColumnItem) {
         throw new Error('Could not find right column.');
     }
-    const columnX = Math.floor(rightColumnItem.transform[4]);
+    const columnX = Math.floor('transform' in rightColumnItem && rightColumnItem.transform[4]);
 
     for (let i = 0; i < pageCount; i++) {
         const pageItems = (await (await doc.getPage(i + 1)).getTextContent()).items;
-        const filteredItems = pageItems.filter((item) => {
+        const filteredItems = pageItems.filter((item): item is TextItem => {
+            if (!('str' in item)) {
+                return false;
+            }
             // filter out the right column
             const beforeColumn = item.transform[4] < columnX;
             const justSpaces = item.str.match(/^\s+$/);
