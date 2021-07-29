@@ -1,3 +1,9 @@
+import {
+    createStateMachine,
+    handleErrorFunction,
+    nextStateFunction,
+    performStateActionFunction,
+} from 'fsm-vir';
 import {IfEquals} from '../augments/type';
 import {InitOutput, ParsedOutput} from './parsed-output';
 import {SharedParserFunctionInputs} from './parser-function';
@@ -7,7 +13,7 @@ import {
     CombineWithBaseParserOptions,
 } from './parser-options';
 
-export type performStateActionFunction<
+export type performParseActionFunction<
     StateType,
     OutputType extends ParsedOutput,
     ParserOptions extends object | undefined = undefined,
@@ -17,15 +23,23 @@ export type performStateActionFunction<
     lastOutput: OutputType,
     parserOptions: CombineWithBaseParserOptions<ParserOptions>,
 ) => OutputType;
-export type nextStateFunction<StateType> = (currentState: StateType, input: string) => StateType;
+
+export type nextParseStateFunction<
+    StateType,
+    ParserOptions extends object | undefined = undefined,
+> = (
+    currentState: StateType,
+    input: string,
+    parserOptions: CombineWithBaseParserOptions<ParserOptions>,
+) => StateType;
 
 export type ParserInitInput<
     StateType,
     OutputType extends ParsedOutput,
     ParserOptions extends object | undefined = undefined,
 > = {
-    action: performStateActionFunction<StateType, OutputType, ParserOptions>;
-    next: nextStateFunction<StateType>;
+    action: performParseActionFunction<StateType, OutputType, ParserOptions>;
+    next: nextParseStateFunction<StateType, ParserOptions>;
     endState: StateType;
     initialState: StateType;
     initOutput?: Readonly<InitOutput<OutputType>>;
@@ -72,69 +86,72 @@ export function createParserStateMachine<
 }: Readonly<
     CreateStateMachineInput<StateType, OutputType, ParserOptions>
 >): StateMachineParserFunction<OutputType> {
+    const handleError: handleErrorFunction<StateType, string, OutputType> = (error) => {
+        const errorName = name ?? `${error.currentValue[0].substring(0, 10)}...`;
+        const printError = error.stack ?? error.message;
+        throw new Error(`Error parsing ${errorName} at "${error.currentValue}": ${printError}`);
+    };
+    const defaultOptions: CombineWithBaseParserOptions<ParserOptions> =
+        collapseDefaultParserOptions(defaultParserOptions);
+
+    const parserOptions: CombineWithBaseParserOptions<ParserOptions> = {
+        ...defaultOptions,
+        ...(inputParserOptions ?? {}),
+    };
+
+    const baseOutput: ParsedOutput = {
+        incomes: [],
+        expenses: [],
+        name,
+        yearPrefix: parserOptions.yearPrefix,
+        accountSuffix: '',
+        endDate: undefined,
+        startDate: undefined,
+    };
+
+    const startingOutput: Readonly<OutputType> = {
+        ...baseOutput,
+        ...(JSON.parse(JSON.stringify(initOutput || {})) as InitOutput<OutputType>),
+    } as OutputType;
+
+    const performStateAction: performStateActionFunction<StateType, string, OutputType> = (
+        currentState,
+        input,
+        lastOutput,
+    ) => {
+        return action(currentState, input, lastOutput, parserOptions);
+    };
+    const calculateNextState: nextStateFunction<StateType, string> = (currentState, input) => {
+        return next(currentState, input, parserOptions);
+    };
+
+    const stateMachine = createStateMachine<StateType, string, OutputType>({
+        performStateAction,
+        calculateNextState,
+        initialState,
+        endState,
+        handleError,
+        initialOutput: startingOutput,
+    });
+
     return (inputs: Readonly<string[]>): Readonly<OutputType> => {
-        let state: StateType = initialState;
-        let iterator = inputs[Symbol.iterator]();
+        const machineResult = stateMachine.runMachine(inputs);
 
-        const errorName = name ?? `${inputs[0].substring(0, 10)}...`;
-
-        const defaultOptions: CombineWithBaseParserOptions<ParserOptions> =
-            collapseDefaultParserOptions(defaultParserOptions);
-
-        const parserOptions: CombineWithBaseParserOptions<ParserOptions> = {
-            ...defaultOptions,
-            ...(inputParserOptions ?? {}),
-        };
-
-        const startingOutput: ParsedOutput = {
-            incomes: [],
-            expenses: [],
-            name,
-            yearPrefix: parserOptions.yearPrefix,
-            accountSuffix: '',
-            endDate: undefined,
-            startDate: undefined,
-        };
-        // no mutations!
-        // note this will break function properties on OutputType
-        let output: OutputType = {
-            ...startingOutput,
-            ...(JSON.parse(JSON.stringify(initOutput || {})) as InitOutput<OutputType>),
-        } as OutputType;
-
-        while (state !== endState) {
-            const nextInput = iterator.next();
-
-            if (nextInput.done) {
-                if (debug) {
-                    console.error(output);
-                }
-                throw new Error(`Reached end of input before hitting end state on "${errorName}"`);
-            }
-
-            const input: string = nextInput.value;
-
-            if (debug) {
-                console.log(`state: "${state}", input: "${input}"`);
-            }
-            try {
-                output = action(state, input, output, parserOptions);
-                state = next(state, input);
-            } catch (error) {
-                error.message += ` in: "${errorName}"`;
-                throw error;
-            }
+        if (debug) {
+            machineResult.logs.forEach((log) => {
+                console.log(log);
+            });
         }
 
-        if (!output.accountSuffix) {
-            const message = `Parse completed without filling in account suffix on "${errorName}"`;
+        if (machineResult.aborted) {
             if (debug) {
-                console.error(output);
+                machineResult.errors.forEach((error) => {
+                    console.error(error);
+                });
             }
-            console.error(message);
-            throw new Error(message);
+            throw new Error(machineResult.errors.join('\n'));
         }
 
-        return output;
+        return machineResult.output;
     };
 }
