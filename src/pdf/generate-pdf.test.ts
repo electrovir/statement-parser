@@ -10,7 +10,7 @@ function generateGeneratePdfTest(
     description: string,
     inputText: string[],
     expect?: string[],
-): TestInputObject<string[], undefined> {
+): TestInputObject<string[] | undefined, undefined> {
     return {
         description,
         expect: expect ?? inputText,

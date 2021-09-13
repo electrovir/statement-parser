@@ -54,7 +54,7 @@ export function allIndexesOf(
          * Grabbing the second to last entry in the array (rather than the second) takes capture
          * groups into account.
          */
-        const matchIndex: string | number = matchResults[matchResults.length - 2];
+        const matchIndex: string | number | undefined = matchResults[matchResults.length - 2];
 
         if (typeof matchIndex !== 'number') {
             throw new Error(
@@ -62,10 +62,10 @@ export function allIndexesOf(
             );
         }
 
-        const regExpMatch = matchResults[0];
+        const regExpMatch: string | number | undefined = matchResults[0];
 
-        if (typeof regExpMatch === 'number') {
-            throw new Error(`regExpMatch should've been a string but was a number!`);
+        if (typeof regExpMatch !== 'string') {
+            throw new Error(`regExpMatch should've been a string but was ${typeof regExpMatch}!`);
         }
 
         indexesAndLengths.push({index: matchIndex, length: regExpMatch.length});

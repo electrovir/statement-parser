@@ -17,14 +17,14 @@ export type ParsedOutput<T extends ParsedTransaction = ParsedTransaction> = {
      */
     expenses: T[];
     accountSuffix: string;
-    name?: string;
+    name: string | undefined;
     /**
      * YearPrefix is the first two digits of the current year accountSuffix is the last digits of
      * the account number (this is usually 4 digits long)
      */
     yearPrefix: number;
-    startDate?: Date;
-    endDate?: Date;
+    startDate?: Date | undefined;
+    endDate?: Date | undefined;
 };
 
 export type InitOutput<FullOutputType extends ParsedOutput> = Partial<

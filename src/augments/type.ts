@@ -13,3 +13,9 @@ export type IfEquals<T, U, Y = unknown, N = never> = (<G>() => G extends T ? 1 :
     : N;
 
 export type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+export type RequiredAndDefinedBy<T, K extends keyof T> = Omit<T, K> &
+    RequiredAndDefined<Pick<T, K>>;
+
+export type RequiredAndDefined<InputObjectGeneric extends object> = {
+    [GenericKey in keyof InputObjectGeneric]-?: NonNullable<InputObjectGeneric[GenericKey]>;
+};

@@ -1,4 +1,5 @@
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
+import {safeMatch} from '../../augments/regexp';
 import {sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -55,9 +56,11 @@ function processTransactionLine(
     startDate: Date,
     endDate: Date,
 ): ParsedTransaction | string {
-    const match = line.match(/^(\d{1,2}\/\d{1,2})\s+(\S.+?)\s+([\.\d,\-]+)$/);
-    if (match) {
-        const [, date, description, amount] = match;
+    const [, date, description, amount] = safeMatch(
+        line,
+        /^(\d{1,2}\/\d{1,2})\s+(\S.+?)\s+([\.\d,\-]+)$/,
+    );
+    if (date && description && amount) {
         const [month, day] = date.split('/');
         return {
             amount: Number(sanitizeNumberString(amount)),
@@ -77,10 +80,10 @@ function performStateAction(
     parserOptions: CombineWithBaseParserOptions<ChaseCreditCardParsingOptions>,
 ) {
     if (currentState === State.Header) {
-        const closingDateMatch = line.match(closingDateRegExp);
-        const accountNumberMatch = line.match(accountNumberRegExp);
-        if (closingDateMatch) {
-            const [, startDateString, endDateString] = closingDateMatch;
+        const [, startDateString, endDateString] = safeMatch(line, closingDateRegExp);
+        const [, accountNumber] = safeMatch(line, accountNumberRegExp);
+
+        if (startDateString && endDateString) {
             const startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
             const endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
             // Chase statements sometimes include transactions a few days outside of the statement range.
@@ -88,8 +91,8 @@ function performStateAction(
             endDate.setDate(endDate.getDate() + 3);
             output.startDate = startDate;
             output.endDate = endDate;
-        } else if (accountNumberMatch && !output.accountSuffix) {
-            output.accountSuffix = accountNumberMatch[1];
+        } else if (accountNumber && !output.accountSuffix) {
+            output.accountSuffix = accountNumber;
         }
     } else if (currentState === State.Payment || currentState === State.Purchase) {
         if (!output.endDate || !output.startDate) {

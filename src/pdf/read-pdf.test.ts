@@ -11,9 +11,8 @@ testGroup({
             description: 'can read pdfkit output',
             expect: 'Some text with an embedded font! PNG and JPEG images:',
             test: async () => {
-                return collapseSpaces(
-                    (await readPdf(join(sampleFilesDir, 'pdfkit-out.pdf')))[0].join(' '),
-                );
+                const pages = await readPdf(join(sampleFilesDir, 'pdfkit-out.pdf'));
+                return collapseSpaces((pages[0] || []).join(' '));
             },
         });
     },

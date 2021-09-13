@@ -73,7 +73,8 @@ function mapReplacement(
 ): number[] {
     const newMapping = [...currentMapping];
     let previousIndexToCheck = replacementIndex - 1;
-    const newIndex = previousIndexToCheck < 0 ? 0 : newMapping[previousIndexToCheck] + 1;
+    const previousMapping = newMapping[previousIndexToCheck] || 0;
+    const newIndex = previousIndexToCheck < 0 ? 0 : previousMapping + 1;
 
     // map all the indexes from the match to the replacement
     Array.from(matchInOriginal).forEach((_, letterIndex) => {
@@ -120,7 +121,7 @@ export function collapseAroundKeyword(
 
 export function sanitizeStatementText(
     text: string[],
-    phrasesToPreserve: ParserKeyword[] = [],
+    phrasesToPreserve: Readonly<ParserKeyword[]> = [],
     debug: boolean,
 ): string[] {
     // start at a's char code -1 so that the first line replacement happens with 'a'
@@ -203,7 +204,7 @@ export function sanitizeStatementText(
         const keywordsIncludedLine =
             !!line.trim() && containsKeywords
                 ? phrasesToPreserve.reduce((wholeString: string, currentKeyword, index) => {
-                      const indexesInOriginalLine = keywordIndexes[index];
+                      const indexesInOriginalLine = keywordIndexes[index] || [];
                       return indexesInOriginalLine.reduce(
                           (replaceInHere: string, indexInOriginalLine) => {
                               if (firstMatched) {
@@ -222,15 +223,27 @@ export function sanitizeStatementText(
                                       `"${currentKeyword}" was found in "${line}" initially but wasn't later!??`,
                                   );
                               }
-                              const replacement = replaceStringAtIndex(
-                                  replaceInHere,
-                                  indexMapping[indexInOriginalLine],
-                                  currentKeywordMatch,
+
+                              const start = indexMapping[indexInOriginalLine];
+
+                              if (start == undefined) {
+                                  throw new Error(`Could not find start index`);
+                              }
+
+                              const end =
                                   indexMapping[
                                       indexInOriginalLine + currentKeywordMatch.length - 1
-                                  ] -
-                                      indexMapping[indexInOriginalLine] +
-                                      1,
+                                  ];
+
+                              if (end == undefined) {
+                                  throw new Error(`Could not find end index`);
+                              }
+
+                              const replacement = replaceStringAtIndex(
+                                  replaceInHere,
+                                  start,
+                                  currentKeywordMatch,
+                                  end - start + 1,
                               );
 
                               const collapsedReplacement = collapseAroundKeyword(
@@ -254,12 +267,7 @@ export function sanitizeStatementText(
                                           indexInOriginalLine + currentKeywordMatch.length - 1
                                       ],
                                       start: indexMapping[indexInOriginalLine],
-                                      replaceLength:
-                                          indexMapping[
-                                              indexInOriginalLine + currentKeywordMatch.length - 1
-                                          ] -
-                                          indexMapping[indexInOriginalLine] +
-                                          1,
+                                      replaceLength: end - start + 1,
                                   });
                               }
 

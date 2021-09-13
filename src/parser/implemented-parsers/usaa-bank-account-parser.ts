@@ -1,5 +1,6 @@
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
+import {safeMatch} from '../../augments/regexp';
 import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -56,11 +57,11 @@ function performStateAction(
     parserOptions: CombineWithBaseParserOptions,
 ) {
     if (currentState === State.StatementPeriod && line !== '') {
-        const match = line.match(
+        const [, accountSuffix, startDateString, endDateString] = safeMatch(
+            line,
             /([\d-]+)\s+.+?(\d{1,2}\/\d{1,2}\/\d{1,2}).+?(\d{1,2}\/\d{1,2}\/\d{1,2})/,
         );
-        if (match) {
-            const [, accountSuffix, startDateString, endDateString] = match;
+        if (accountSuffix && startDateString && endDateString) {
             output.accountSuffix = accountSuffix.replace(/-/g, '').slice(-4);
             if (!output.accountSuffix.match(/\d+/)) {
                 throw new Error(`Invalid account suffix: "${output.accountSuffix}"`);
@@ -78,8 +79,12 @@ function performStateAction(
     ) {
         const array = currentState === State.Debit ? output.expenses : output.incomes;
 
-        const match = line.match(/^(\d{1,2}\/\d{1,2})\s+((?:\d+|,|\.)+)\s+(.*)$/);
-        if (match) {
+        const [, dateString, amountString, descriptionString] = safeMatch(
+            line,
+            /^(\d{1,2}\/\d{1,2})\s+((?:\d+|,|\.)+)\s+(.*)$/,
+        );
+        const currentDebit = array[array.length - 1];
+        if (dateString && amountString && descriptionString) {
             if (!output.startDate || !output.endDate) {
                 throw new Error(
                     `Missing start/end date: ${JSON.stringify({
@@ -89,7 +94,7 @@ function performStateAction(
                 );
             }
             // start line of debit
-            const parts = match[1].split('/');
+            const parts = dateString.split('/');
             const date = dateWithinRange(
                 output.startDate,
                 output.endDate,
@@ -98,13 +103,12 @@ function performStateAction(
             );
             array.push({
                 date: date,
-                amount: Number(sanitizeNumberString(match[2])),
-                description: collapseSpaces(match[3]).trim(),
+                amount: Number(sanitizeNumberString(amountString)),
+                description: collapseSpaces(descriptionString).trim(),
                 from: undefined,
                 originalText: [line],
             });
-        } else {
-            const currentDebit = array[array.length - 1];
+        } else if (currentDebit) {
             /*
              * Assume that the current line is the last line for the current debit.
              * "from" is always the last line, so shift the current "from" to "method" since it wasn't the last line.

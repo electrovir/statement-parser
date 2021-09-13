@@ -87,7 +87,7 @@ export function createParserStateMachine<
     CreateStateMachineInput<StateType, OutputType, ParserOptions>
 >): StateMachineParserFunction<OutputType> {
     const handleError: handleErrorFunction<StateType, string, OutputType> = (error) => {
-        const errorName = name ?? `${error.currentValue[0].substring(0, 10)}...`;
+        const errorName = name ?? `${String(error.currentValue?.[0]).substring(0, 10)}...`;
         const printError = error.stack ?? error.message;
         throw new Error(`Error parsing ${errorName} at "${error.currentValue}": ${printError}`);
     };

@@ -2,7 +2,7 @@ import {ensureDir, existsSync, readFileSync, writeFile} from 'fs-extra';
 import {dirname, join, relative} from 'path';
 import {format, resolveConfig} from 'prettier';
 import {TestInputObject} from 'test-vir';
-import {Overwrite, RequiredBy} from '../augments/type';
+import {Overwrite, RequiredAndDefinedBy} from '../augments/type';
 import {setSanitizerMode, unsetSanitizerMode} from '../global';
 import {getPackageVersion} from '../package-version';
 import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
@@ -31,7 +31,7 @@ export type SanitizedTestFile<SelectedParser extends ParserType> = {
 
 type SanitizingStatementPdf = Overwrite<
     StatementPdf,
-    {parserInput: RequiredBy<StatementPdf['parserInput'], 'name' | 'debug'>}
+    {parserInput: RequiredAndDefinedBy<StatementPdf['parserInput'], 'name' | 'debug'>}
 >;
 
 async function validateSanitizedParsing(
@@ -79,7 +79,7 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
 }: SanitizingStatementPdf): Promise<SanitizedTestFile<SelectedParser>> {
     const parser = parsers[parserType];
 
-    const sanitizedText = await sanitizePdf(parserInput.filePath, parserType, parserInput.debug);
+    const sanitizedText = await sanitizePdf(parserInput.filePath, parserType, !!parserInput.debug);
 
     let parsedSanitized: ParsedOutput | undefined;
     let parseError: Error | undefined;
@@ -91,7 +91,11 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
         });
         unsetSanitizerMode();
     } catch (error) {
-        parseError = error;
+        if (error instanceof Error) {
+            parseError = error;
+        } else {
+            parseError = new Error(String(error));
+        }
     }
 
     const sanitizedTestObject: SanitizedTestFile<SelectedParser> = {
@@ -121,8 +125,8 @@ export async function writeSanitizedTestFile(
     const statementPdf: SanitizingStatementPdf = {
         ...rawStatementPdf,
         parserInput: {
-            name: getSanitizedName(sampleFilePath),
             ...rawStatementPdf.parserInput,
+            name: rawStatementPdf.parserInput.name ?? getSanitizedName(sampleFilePath),
             debug,
         },
     };

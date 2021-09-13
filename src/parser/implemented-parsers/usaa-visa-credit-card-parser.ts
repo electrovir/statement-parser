@@ -1,4 +1,5 @@
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
+import {safeMatch} from '../../augments/regexp';
 import {sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -61,16 +62,18 @@ export const usaaVisaCreditCardStatementParser = createStatementParser<State, Us
     },
 );
 
-const transactionRegex =
+const transactionRegExp =
     /^(\d{1,2}\/\d{1,2})\s+(\d{1,2}\/\d{1,2})\s+(\S.*?)\s+?(\S.*?)\s+\$((?:\d+|,|\.)+)\-?$/;
 
 function processTransactionLine(
     line: string,
     endDate: Date,
 ): UsaaVisaCreditCardTransaction | string {
-    const match = line.match(transactionRegex);
-    if (match) {
-        const [, transactionDate, postDate, referenceNumber, description, amount] = match;
+    const [, transactionDate, postDate, referenceNumber, description, amount] = safeMatch(
+        line,
+        transactionRegExp,
+    );
+    if (transactionDate && postDate && referenceNumber && description && amount) {
         const [transactionMonth, transactionDay] = transactionDate.split('/');
         const [postMonth, postDay] = postDate.split('/');
         return {
@@ -101,7 +104,7 @@ function performStateAction(
         (currentState === State.Credit && !line.match(creditsEndRegExp)) ||
         (currentState === State.Payment && !line.match(paymentsEndRegExp)) ||
         // read expenses if in this state and the line matches a transaction
-        (currentState === State.CreditStartedFiller && line.match(transactionRegex))
+        (currentState === State.CreditStartedFiller && line.match(transactionRegExp))
     ) {
         if (!output.endDate) {
             throw new Error('Started reading transactions but got no statement close date.');
@@ -113,8 +116,8 @@ function performStateAction(
         const result = processTransactionLine(line, output.endDate);
 
         if (typeof result === 'string') {
-            if (result) {
-                const lastTransaction = array[array.length - 1];
+            const lastTransaction = array[array.length - 1];
+            if (result && lastTransaction) {
                 lastTransaction.description += '\n' + result;
                 lastTransaction.originalText.push(line);
             }
@@ -122,15 +125,12 @@ function performStateAction(
             array.push(result);
         }
     } else if (currentState === State.Header) {
-        const statementClosingDateRegex = line.match(closingDateRegExp);
-        const accountNumberRegex = line.match(extractAccountNumberRegExp);
-        if (statementClosingDateRegex) {
-            output.endDate = dateFromSlashFormat(
-                statementClosingDateRegex[1],
-                parserOptions.yearPrefix,
-            );
-        } else if (accountNumberRegex && !output.accountSuffix) {
-            output.accountSuffix = accountNumberRegex[1];
+        const [, closingDateString] = safeMatch(line, closingDateRegExp);
+        const [, accountNumberString] = safeMatch(line, extractAccountNumberRegExp);
+        if (closingDateString) {
+            output.endDate = dateFromSlashFormat(closingDateString, parserOptions.yearPrefix);
+        } else if (accountNumberString && !output.accountSuffix) {
+            output.accountSuffix = accountNumberString;
         }
     }
 
@@ -176,7 +176,7 @@ function nextState(currentState: State, line: string): State {
         case State.CreditStartedFiller:
             if (
                 line.match(PreserveKeywords.TransactionsContinued) ||
-                line.match(transactionRegex)
+                line.match(transactionRegExp)
             ) {
                 return State.Credit;
             }

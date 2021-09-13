@@ -1,5 +1,6 @@
 import {dateFromNamedCommaFormat, dateFromSlashFormat} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
+import {safeMatch} from '../../augments/regexp';
 import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {createStatementParser} from '../statement-parser';
@@ -45,18 +46,22 @@ export const paypalStatementParser = createStatementParser<State, PaypalOutput>(
 });
 
 function performStateAction(currentState: State, line: string, output: PaypalOutput) {
+    const lastExpense = output.expenses[output.expenses.length - 1];
+    const lastIncome = output.incomes[output.incomes.length - 1];
+
     if (currentState === State.HeaderData && !output.startDate) {
-        const match = line.match(headerDataLineRegExp);
-        if (match) {
-            const [, startDate, endDate, accountId] = match;
+        const [, startDate, endDate, accountId] = safeMatch(line, headerDataLineRegExp);
+        if (startDate && endDate && accountId) {
             output.startDate = dateFromNamedCommaFormat(startDate);
             output.endDate = dateFromNamedCommaFormat(endDate);
             output.accountSuffix = accountId;
         }
     } else if (currentState === State.Activity) {
-        const match = line.match(transactionStartRegExp);
-        if (match) {
-            const [, date, description, amountString, fees, total] = match;
+        const [, date, description, amountString, fees, total] = safeMatch(
+            line,
+            transactionStartRegExp,
+        );
+        if (date && description && amountString && fees && total) {
             const amount = Number(sanitizeNumberString(amountString));
             const newTransaction: PaypalTransaction = {
                 date: dateFromSlashFormat(date),
@@ -71,12 +76,10 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
 
             array.push(newTransaction);
         }
-    } else if (currentState === State.ExpenseInside && line !== '') {
-        const lastExpense = output.expenses[output.expenses.length - 1];
+    } else if (currentState === State.ExpenseInside && line !== '' && lastExpense) {
         lastExpense.description += '\n' + collapseSpaces(line);
         lastExpense.originalText.push(line);
-    } else if (currentState === State.IncomeInside && line !== '') {
-        const lastIncome = output.incomes[output.incomes.length - 1];
+    } else if (currentState === State.IncomeInside && line !== '' && lastIncome) {
         lastIncome.description += '\n' + collapseSpaces(line);
         lastIncome.originalText.push(line);
     }
@@ -117,9 +120,9 @@ function nextState(currentState: State, line: string): State {
             }
             break;
         case State.Activity:
-            const match = line.match(transactionStartRegExp);
-            if (match) {
-                if (Number(sanitizeNumberString(match[5])) < 0) {
+            const amountMatch = safeMatch(line, transactionStartRegExp)[5];
+            if (amountMatch) {
+                if (Number(sanitizeNumberString(amountMatch)) < 0) {
                     return State.ExpenseInside;
                 } else {
                     return State.IncomeInside;

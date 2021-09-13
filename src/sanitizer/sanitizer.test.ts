@@ -37,7 +37,7 @@ testGroup({
         function sanitizerTest(
             input: string[],
             expectation: string[],
-            keywords: ParserKeyword[] = [],
+            keywords: Readonly<ParserKeyword[]> = [],
             description?: string,
             debug = false,
             extraOptions?: Omit<
@@ -65,7 +65,7 @@ testGroup({
                 `.split('\n'),
             );
 
-            const keywords = ['account number'];
+            const keywords = ['account number'] as const;
 
             runTest({
                 description: 'output length should be the same',

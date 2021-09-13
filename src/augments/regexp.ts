@@ -10,3 +10,8 @@ export function addRegExpFlags(originalRegExp: RegExp, flags: string): RegExp {
         deDupeRegExFlags([originalRegExp.flags, flags].join('')),
     );
 }
+
+export function safeMatch(input: string, regExp: RegExp) {
+    const match = input.match(regExp);
+    return match ? match : [];
+}

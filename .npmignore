@@ -13,9 +13,7 @@ src
 test-repos
 tsconfig-base.json
 tsconfig.json
-.prettierrc.json
 files
-prettierignore
 dist/sanitizer
 repo-paths*
 *.sh

@@ -17,11 +17,15 @@ const longMonthNames = [
 const shortMonthNames = longMonthNames.map((longMonthName) => longMonthName.slice(0, 3));
 
 export class InvalidDateError extends Error {
-    public readonly name = 'InvalidDateError';
+    public override readonly name = 'InvalidDateError';
 }
 
 export function dateFromSlashFormat(input: string, yearPrefix: number | string = '') {
     const [month, day, rawYearEnding = ''] = input.split('/');
+
+    if (!month || !day) {
+        throw new Error(`Unable to extract month or day from "${input}"`);
+    }
 
     const yearEnding =
         rawYearEnding.length < 4 ? `${yearPrefix}${rawYearEnding.padStart(2, '0')}` : rawYearEnding;

@@ -1,4 +1,5 @@
 import {createUtcDate} from '../../augments/date';
+import {safeMatch} from '../../augments/regexp';
 import {sanitizeNumberString} from '../../augments/string';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {createStatementParser} from '../statement-parser';
@@ -17,13 +18,12 @@ export const exampleStatementParser = createStatementParser<State, ParsedOutput>
     parserKeywords: [],
 });
 
-const validPaymentRegex = /(\d{2}\/\d{2})\s+(.+)\$([-,.\d]+)/;
+const validPaymentRegExp = /(\d{2}\/\d{2})\s+(.+)\$([-,.\d]+)/;
 
 function readPayment(line: string): ParsedTransaction | undefined {
-    const match = line.match(validPaymentRegex);
+    const [, dateString, descriptionString, amountString] = safeMatch(line, validPaymentRegExp);
 
-    if (match) {
-        const [, dateString, descriptionString, amountString] = match;
+    if (dateString && descriptionString && amountString) {
         return {
             amount: Number(sanitizeNumberString(amountString)),
             description: descriptionString,
@@ -36,7 +36,7 @@ function readPayment(line: string): ParsedTransaction | undefined {
 }
 
 function performStateAction(currentState: State, line: string, output: ParsedOutput) {
-    if (currentState === State.InnerState && line.match(validPaymentRegex)) {
+    if (currentState === State.InnerState && line.match(validPaymentRegExp)) {
         const transaction = readPayment(line);
         if (transaction) {
             output.incomes.push(transaction);

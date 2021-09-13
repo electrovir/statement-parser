@@ -2,6 +2,7 @@ import {parsePageItems} from 'pdf-text-reader';
 import {TextItem} from 'pdfjs-dist/types/display/api';
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
+import {safeMatch} from '../../augments/regexp';
 import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
 import {Overwrite} from '../../augments/type';
 import {getPdfDocument} from '../../pdf/read-pdf';
@@ -101,12 +102,13 @@ function outputValidation(output: ParsedOutput) {
     });
 }
 
-const amountRegex = /^-?\$([\d,\.]+)\s*$/i;
+const amountRegExp = /^-?\$([\d,\.]+)\s*$/i;
 
 function parseAmount(input: string, negate: boolean): number {
-    const match = input.match(amountRegex);
-    if (match) {
-        const amount = Number(sanitizeNumberString(match[1]));
+    const [, amountMatch] = safeMatch(input, amountRegExp);
+
+    if (amountMatch) {
+        const amount = Number(sanitizeNumberString(amountMatch));
         let multiplier = negate ? -1 : 1;
 
         if (input[0] === '-') {
@@ -130,12 +132,12 @@ function parseTransactionLine(
         );
     }
 
-    const transactionMatch = line.match(
+    const [, monthString, dayString, description, amountString] = safeMatch(
+        line,
         /(?:\d{1,2}\/\d{1,2}\s*)?(\d{1,2})\/(\d{1,2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i,
     );
 
-    if (transactionMatch) {
-        const [, monthString, dayString, description, amountString] = transactionMatch;
+    if (monthString && dayString && description && amountString) {
         const transaction: CitiCostcoVisaCreditIntermediateTransaction = {
             date: dateWithinRange(
                 output.startDate,
@@ -153,7 +155,7 @@ function parseTransactionLine(
 
         return transaction;
     } else {
-        const amountMatch = line.match(amountRegex);
+        const amountMatch = line.match(amountRegExp);
         if (amountMatch) {
             return parseAmount(line, negate);
         } else {
@@ -169,14 +171,13 @@ function performStateAction(
     parserOptions: CombineWithBaseParserOptions,
 ) {
     if (currentState === State.Header) {
-        const billingPeriodMatch = line.match(billingPeriodRegExp);
-        const accountEndingMatch = line.match(accountNumberRegExp);
-        if (billingPeriodMatch) {
-            const [, startDateString, endDateString] = billingPeriodMatch;
+        const [, startDateString, endDateString] = safeMatch(line, billingPeriodRegExp);
+        const [, accountSuffixString] = safeMatch(line, accountNumberRegExp);
+        if (startDateString && endDateString) {
             output.startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
             output.endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
-        } else if (accountEndingMatch) {
-            output.accountSuffix = accountEndingMatch[1];
+        } else if (accountSuffixString) {
+            output.accountSuffix = accountSuffixString;
         }
     } else if (line !== '' && (currentState === State.Purchase || currentState === State.Payment)) {
         const array = currentState === State.Purchase ? output.expenses : output.incomes;
@@ -185,10 +186,10 @@ function performStateAction(
         const lastTransaction: CitiCostcoVisaCreditIntermediateTransaction | undefined =
             array[array.length - 1];
 
-        if (typeof lineParse === 'string') {
+        if (typeof lineParse === 'string' && lastTransaction) {
             lastTransaction.description += '\n' + lineParse;
             lastTransaction.originalText.push(line);
-        } else if (typeof lineParse === 'number') {
+        } else if (typeof lineParse === 'number' && lastTransaction) {
             lastTransaction.amount = lineParse;
             lastTransaction.originalText.push(line);
         } else {
