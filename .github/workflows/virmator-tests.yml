@@ -1,9 +1,9 @@
-name: master-tests
+name: tests
 
 on:
     push:
         branches:
-            - master
+            - '**'
 
 jobs:
     build:

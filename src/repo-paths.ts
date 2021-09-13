@@ -17,6 +17,7 @@ export const sanitizedFilesDir = join(sampleFilesDir, 'sanitized');
 export const tempOutputDir = join(filesDir, 'temp-output');
 export const temp_sanitizerRawTestFilePath = join(tempOutputDir, 'last-raw-text-for-sanitizer.txt');
 export const temp_sanitizerSanitizedTextFilePath = join(tempOutputDir, 'last-sanitized-text.txt');
+export const prettierConfigPath = join(repoRootDir, '.prettierrc.js');
 
 export const packageJson = join(repoRootDir, 'package.json');
 

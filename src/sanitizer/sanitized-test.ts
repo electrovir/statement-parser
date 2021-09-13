@@ -1,6 +1,6 @@
 import {ensureDir, existsSync, readFileSync, writeFile} from 'fs-extra';
 import {dirname, join, relative} from 'path';
-import {format} from 'prettier';
+import {format, resolveConfig} from 'prettier';
 import {TestInputObject} from 'test-vir';
 import {Overwrite, RequiredBy} from '../augments/type';
 import {setSanitizerMode, unsetSanitizerMode} from '../global';
@@ -9,7 +9,7 @@ import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {ParsedOutput} from '../parser/parsed-output';
 import {checkThatPdfExists} from '../pdf/read-pdf';
-import {repoRootDir, sanitizedFilesDir} from '../repo-paths';
+import {prettierConfigPath, repoRootDir, sanitizedFilesDir} from '../repo-paths';
 import {sanitizePdf} from './sanitizer';
 
 export type SanitizedTestFile<SelectedParser extends ParserType> = {
@@ -111,8 +111,6 @@ async function createSanitizedTestFileObject<SelectedParser extends ParserType>(
     return sanitizedTestObject;
 }
 
-const prettierConfig = JSON.parse(readFileSync(join(repoRootDir, '.prettierrc.json')).toString());
-
 export async function writeSanitizedTestFile(
     rawStatementPdf: StatementPdf,
     outputFileName: string,
@@ -148,6 +146,8 @@ export async function writeSanitizedTestFile(
         (await validateSanitizedParsing(statementPdf, sanitizedTestObject.output, debug));
 
     await ensureDir(dirname(sampleFilePath));
+
+    const prettierConfig = await resolveConfig(prettierConfigPath);
 
     await writeFile(
         sampleFilePath,

@@ -1,20 +1,4 @@
 {
-    "ignorePaths": ["node_modules", "package-lock.json", "dist", "files"],
-    "version": "0.1",
-    "words": [
-        "accum",
-        "adipiscing",
-        "amet",
-        "citi",
-        "consectetur",
-        "electrovir",
-        "packagejson",
-        "paypal",
-        "pdfs",
-        "prettierrc",
-        "repo's",
-        "transpiled",
-        "transpiling",
-        "usaa"
-    ]
+    "import": ".cspell-base.json",
+    "words": ["adipiscing", "amet", "transpiled", "citi", "consectetur", "usaa", "pdfs"]
 }
