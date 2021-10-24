@@ -37,12 +37,12 @@
     "typings": "dist/src/index.d.ts",
     "scripts": {
         "prepublishOnly": "npm run test:full",
-        "test": "virmator test",
-        "test:full": "npm run test && virmator spellcheck && virmator format check",
+        "sanitize": "virmator compile && node dist/sanitizer/sanitize-for-test-file-cli.js",
         "sanitize:all": "./bulk-sanitize.sh files/downloads",
         "sanitize:no-compile": "node dist/sanitizer/sanitize-for-test-file-cli.js",
-        "sanitize": "virmator compile && node dist/sanitizer/sanitize-for-test-file-cli.js",
-        "test:file": "./test-specific-file.sh"
+        "test": "virmator test",
+        "test:file": "./test-specific-file.sh",
+        "test:full": "npm run test && virmator spellcheck && virmator format check"
     },
     "dependencies": {
         "fs-extra": "^10.0.0",
