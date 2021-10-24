@@ -16,7 +16,7 @@
         "skipDefaultLibCheck": true,
         "skipLibCheck": true,
         "strict": true,
-        "target": "es6",
+        "target": "ES2018",
         "useUnknownInCatchVariables": true
     },
     "exclude": ["node_modules", "dist", "test-repos", "scripts"]

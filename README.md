@@ -24,9 +24,9 @@ Currently tested on Node.js versions 12.x and 14.x in combination with the lates
 
 The high level most useful api function is the asynchronous [`parsePdfs`](https://github.com/electrovir/statement-parser/tree/master/src/parser/parse-api.ts) function. Simply pass in an array that has details for each PDF file you wish to parse. Note that there is no synchronous alternative.
 
-<!-- api-simple-parse.example.ts -->
+<!-- example-link: src/readme-examples/api-simple-parse.example.ts -->
 
-```typescript
+```TypeScript
 import {parsePdfs, ParserType} from 'statement-parser';
 
 parsePdfs([
@@ -41,9 +41,9 @@ parsePdfs([
 
 `parsePdfs` accepts an array of [`StatementPdf`](https://github.com/electrovir/statement-parser/tree/master/src/parser/parse-api.ts) objects. Thus, each element in the array should look like the following:
 
-<!-- api-simple-parse-inputs.example.ts -->
+<!-- example-link: src/readme-examples/api-simple-parse-inputs.example.ts -->
 
-```typescript
+```TypeScript
 import {ParserType, StatementPdf} from 'statement-parser';
 
 const myPdfToParse: StatementPdf = {
@@ -76,9 +76,9 @@ Currently built parsers are the following:
 
 Simply import `ParserType` to use these keys, as shown below and in the other [Examples](#examples) in this README:
 
-<!-- parser-type.example.ts -->
+<!-- example-link: src/readme-examples/parser-type.example.ts -->
 
-```typescript
+```TypeScript
 import {ParserType} from 'statement-parser';
 
 // possible ParserType keys
@@ -93,10 +93,10 @@ ParserType.Paypal;
 
 -   There are extra parser inputs:
 
-    <!-- all-options.example.ts -->
+    <!-- example-link: src/readme-examples/all-options.example.ts -->
 
-    ```typescript
-    import {parsePdfs, ParserType} from '..';
+    ```TypeScript
+    import {parsePdfs, ParserType} from 'statement-parser';
 
     parsePdfs([
         {
@@ -118,7 +118,7 @@ ParserType.Paypal;
                  * slightly different parser options.
                  */
                 parserOptions: {
-                    /** Every parser includes this property. See Year prefix section in the README for details. */
+                    /** Every parser includes this option. See Year prefix section in the README for details. */
                     yearPrefix: 19,
                 },
             },
@@ -144,9 +144,9 @@ ParserType.Paypal;
 
 -   If you're less familiar with asynchronous programming, here's a good way (but not the _only_ way) to deal with that:
 
-    <!-- better-async.example.ts -->
+    <!-- example-link: src/readme-examples/better-async.example.ts -->
 
-    ```typescript
+    ```TypeScript
     import {parsePdfs, ParserType} from 'statement-parser';
 
     async function main() {
@@ -174,9 +174,9 @@ ParserType.Paypal;
 
 -   Parsing files can be done directly with a single parser:
 
-    <!-- direct-parsing.example.ts -->
+    <!-- example-link: src/readme-examples/direct-parsing.example.ts -->
 
-    ```typescript
+    ```TypeScript
     import {parsers, ParserType} from 'statement-parser';
 
     const parser = parsers[ParserType.Paypal];
@@ -185,9 +185,9 @@ ParserType.Paypal;
 
 -   With a single parser you can parse text lines directly (if somehow that's how your statements are stored), rather than using a PDF file:
 
-    <!-- direct-text-parsing.example.ts -->
+    <!-- example-link: src/readme-examples/direct-text-parsing.example.ts -->
 
-    ```typescript
+    ```TypeScript
     import {parsers, ParserType} from 'statement-parser';
 
     const parser = parsers[ParserType.Paypal];

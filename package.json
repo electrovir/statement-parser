@@ -36,13 +36,16 @@
     "main": "dist/src/index.js",
     "typings": "dist/src/index.d.ts",
     "scripts": {
+        "format": "virmator format write",
         "prepublishOnly": "npm run test:full",
         "sanitize": "virmator compile && node dist/sanitizer/sanitize-for-test-file-cli.js",
         "sanitize:all": "./bulk-sanitize.sh files/downloads",
         "sanitize:no-compile": "node dist/sanitizer/sanitize-for-test-file-cli.js",
+        "spellcheck": "virmator spellcheck",
+        "update-docs": "virmator code-in-markdown README.md",
         "test": "virmator test",
         "test:file": "./test-specific-file.sh",
-        "test:full": "npm run test && virmator spellcheck && virmator format check"
+        "test:full": "npm run test && npm run spellcheck && npm run format check"
     },
     "dependencies": {
         "fs-extra": "^10.0.0",
