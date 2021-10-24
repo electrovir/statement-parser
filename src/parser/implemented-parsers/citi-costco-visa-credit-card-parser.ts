@@ -1,5 +1,5 @@
 import {parsePageItems} from 'pdf-text-reader';
-import {TextItem} from 'pdfjs-dist/types/display/api';
+import {TextItem} from 'pdfjs-dist/types/src/display/api';
 import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
 import {getEnumTypedValues} from '../../augments/object';
 import {safeMatch} from '../../augments/regexp';
@@ -137,7 +137,7 @@ function parseTransactionLine(
         /(?:\d{1,2}\/\d{1,2}\s*)?(\d{1,2})\/(\d{1,2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i,
     );
 
-    if (monthString && dayString && description && amountString) {
+    if (description) {
         const transaction: CitiCostcoVisaCreditIntermediateTransaction = {
             date: dateWithinRange(
                 output.startDate,

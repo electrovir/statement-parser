@@ -11,7 +11,7 @@ export function addRegExpFlags(originalRegExp: RegExp, flags: string): RegExp {
     );
 }
 
-export function safeMatch(input: string, regExp: RegExp) {
+export function safeMatch(input: string, regExp: RegExp): string[] {
     const match = input.match(regExp);
-    return match ? match : [];
+    return match ?? [];
 }

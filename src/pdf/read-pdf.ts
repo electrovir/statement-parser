@@ -1,7 +1,7 @@
 import {existsSync} from 'fs-extra';
 import {readPdfText} from 'pdf-text-reader';
 import {getDocument, VerbosityLevel} from 'pdfjs-dist/legacy/build/pdf';
-import {DocumentInitParameters, PDFDocumentProxy} from 'pdfjs-dist/types/display/api';
+import {DocumentInitParameters, PDFDocumentProxy} from 'pdfjs-dist/types/src/display/api';
 
 export async function readPdf(path: string): Promise<string[][]> {
     checkThatPdfExists(path);

@@ -1,6 +1,6 @@
 import {existsSync, move} from 'fs-extra';
 import {basename, join} from 'path';
-import {resolveTestGroup, testGroup} from 'test-vir';
+import {resolveTestGroups, testGroup} from 'test-vir';
 import {ParserType} from '../parser/all-parsers';
 import {generatePdfDocument} from '../pdf/generate-pdf';
 import {dummyPdfPath, tempOutputDir} from '../repo-paths';
@@ -24,7 +24,7 @@ function testTempOutputFile(args: string[]) {
             },
         });
 
-        await resolveTestGroup(testGroupOutput);
+        await resolveTestGroups(testGroupOutput);
 
         // if the output file was created, delete it
         if (existsSync(filePath)) {

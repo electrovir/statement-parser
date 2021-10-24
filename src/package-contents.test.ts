@@ -1,4 +1,5 @@
 import {testGroup} from 'test-vir';
+import {safeMatch} from './augments/regexp';
 import {runBashCommand} from './bash-scripting';
 
 const packCommand = `npm pack --dry-run`;
@@ -24,13 +25,12 @@ async function extractPackFiles(): Promise<string[]> {
     const lines = raw.slice(1, raw.length - 1);
 
     const extractedFiles = lines.map((line) => {
-        const match = line.match(fileLineRegExp);
-        const firstMatch = match?.[0];
+        const [, fileName] = safeMatch(line, fileLineRegExp);
 
-        if (!firstMatch) {
+        if (!fileName) {
             throw new Error(`Could not match npm pack file line "${line}" with ${fileLineRegExp}`);
         }
-        return firstMatch;
+        return fileName.trim();
     });
     return extractedFiles;
 }
