@@ -1,6 +1,5 @@
-import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
-import {safeMatch} from '../../augments/regexp';
-import {sanitizeNumberString} from '../../augments/string';
+import {createDateFromSlashFormat, safeMatch, stripCommasFromNumberString} from 'augment-vir';
+import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
 import {createStatementParser} from '../statement-parser';
@@ -63,7 +62,7 @@ function processTransactionLine(
     if (date && description && amount) {
         const [month, day] = date.split('/');
         return {
-            amount: Number(sanitizeNumberString(amount)),
+            amount: Number(stripCommasFromNumberString(amount)),
             description,
             date: dateWithinRange(startDate, endDate, Number(month), Number(day)),
             originalText: [line],
@@ -84,8 +83,8 @@ function performStateAction(
         const [, accountNumber] = safeMatch(line, accountNumberRegExp);
 
         if (startDateString && endDateString) {
-            const startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
-            const endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
+            const startDate = createDateFromSlashFormat(startDateString, parserOptions.yearPrefix);
+            const endDate = createDateFromSlashFormat(endDateString, parserOptions.yearPrefix);
             // Chase statements sometimes include transactions a few days outside of the statement range.
             startDate.setDate(startDate.getDate() - 3);
             endDate.setDate(endDate.getDate() + 3);

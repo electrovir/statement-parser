@@ -1,7 +1,12 @@
-import {dateFromNamedCommaFormat, dateFromSlashFormat} from '../../augments/date';
-import {getEnumTypedValues} from '../../augments/object';
-import {safeMatch} from '../../augments/regexp';
-import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
+import {
+    collapseSpaces,
+    createDateFromNamedCommaFormat,
+    createDateFromSlashFormat,
+    getEnumTypedValues,
+    safeMatch,
+    stripCommasFromNumberString,
+} from 'augment-vir';
+import {isSanitizerMode} from '../../global';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {createStatementParser} from '../statement-parser';
 
@@ -52,8 +57,8 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
     if (currentState === State.HeaderData && !output.startDate) {
         const [, startDate, endDate, accountId] = safeMatch(line, headerDataLineRegExp);
         if (startDate && endDate && accountId) {
-            output.startDate = dateFromNamedCommaFormat(startDate);
-            output.endDate = dateFromNamedCommaFormat(endDate);
+            output.startDate = createDateFromNamedCommaFormat(startDate, isSanitizerMode());
+            output.endDate = createDateFromNamedCommaFormat(endDate, isSanitizerMode());
             output.accountSuffix = accountId;
         }
     } else if (currentState === State.Activity) {
@@ -62,13 +67,13 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
             transactionStartRegExp,
         );
         if (date && description && amountString && fees && total) {
-            const amount = Number(sanitizeNumberString(amountString));
+            const amount = Number(stripCommasFromNumberString(amountString));
             const newTransaction: PaypalTransaction = {
-                date: dateFromSlashFormat(date),
+                date: createDateFromSlashFormat(date),
                 description: collapseSpaces(description),
                 // this assumption that we can always use absolute value here may be wrong
-                amount: Math.abs(Number(sanitizeNumberString(total))),
-                fees: Math.abs(Number(sanitizeNumberString(fees))),
+                amount: Math.abs(Number(stripCommasFromNumberString(total))),
+                fees: Math.abs(Number(stripCommasFromNumberString(fees))),
                 baseAmount: Math.abs(amount),
                 originalText: [line],
             };
@@ -122,7 +127,7 @@ function nextState(currentState: State, line: string): State {
         case State.Activity:
             const amountMatch = safeMatch(line, transactionStartRegExp)[5];
             if (amountMatch) {
-                if (Number(sanitizeNumberString(amountMatch)) < 0) {
+                if (Number(stripCommasFromNumberString(amountMatch)) < 0) {
                     return State.ExpenseInside;
                 } else {
                     return State.IncomeInside;

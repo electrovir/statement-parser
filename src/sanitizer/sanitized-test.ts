@@ -1,8 +1,8 @@
+import {Overwrite, RequiredAndNotNullBy} from 'augment-vir';
 import {ensureDir, existsSync, readFileSync, writeFile} from 'fs-extra';
 import {dirname, join, relative} from 'path';
 import {format, resolveConfig} from 'prettier';
 import {TestInputObject} from 'test-vir';
-import {Overwrite, RequiredAndDefinedBy} from '../augments/type';
 import {setSanitizerMode, unsetSanitizerMode} from '../global';
 import {getPackageVersion} from '../package-version';
 import {AllParserOptions, parsers, ParserType} from '../parser/all-parsers';
@@ -31,7 +31,7 @@ export type SanitizedTestFile<SelectedParser extends ParserType> = {
 
 type SanitizingStatementPdf = Overwrite<
     StatementPdf,
-    {parserInput: RequiredAndDefinedBy<StatementPdf['parserInput'], 'name' | 'debug'>}
+    {parserInput: RequiredAndNotNullBy<StatementPdf['parserInput'], 'name' | 'debug'>}
 >;
 
 async function validateSanitizedParsing(

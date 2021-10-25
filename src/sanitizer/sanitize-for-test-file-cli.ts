@@ -1,5 +1,5 @@
+import {getEnumTypedValues} from 'augment-vir';
 import {extname, relative} from 'path';
-import {getEnumTypedValues} from '../augments/object';
 import {isParserType, ParserType} from '../parser/all-parsers';
 import {StatementPdf} from '../parser/parse-api';
 import {checkThatPdfExists} from '../pdf/read-pdf';

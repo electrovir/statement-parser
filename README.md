@@ -260,5 +260,3 @@ If you find that your statement PDF is coming from a bank or credit card that th
 3. Add new `runTest` calls for the tests you want to add.
 
 See other test files for examples, such as [`array.test.ts`](https://github.com/electrovir/statement-parser/tree/master/src/augments/array.test.ts).
-
-> v2.0.0

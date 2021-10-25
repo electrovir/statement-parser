@@ -1,5 +1,5 @@
+import {trimArrayStrings} from 'augment-vir';
 import {testGroup, TestInputObject} from 'test-vir';
-import {trimArray} from '../augments/array';
 import {ParserKeyword} from '../parser/parser-options';
 import {collapseAroundKeyword, sanitizeStatementText} from './sanitizer';
 
@@ -57,7 +57,7 @@ testGroup({
             });
         }
         {
-            const unSanitized = trimArray(
+            const unSanitized = trimArrayStrings(
                 `
                     secret account number: 123-456-789
                     $30     super secret purchase don't tell anyone about it
@@ -106,7 +106,7 @@ testGroup({
 
             sanitizerTest(
                 unSanitized,
-                trimArray(
+                trimArrayStrings(
                     `
                     a account number 1-2-3
                     $4  k
@@ -119,7 +119,7 @@ testGroup({
 
             sanitizerTest(
                 unSanitized,
-                trimArray(
+                trimArrayStrings(
                     `
                     a account number 1-2-3
                     $4  super secret purchase k

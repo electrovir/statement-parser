@@ -1,6 +1,6 @@
+import {collapseSpaces} from 'augment-vir';
 import {join} from 'path';
 import {testGroup} from 'test-vir';
-import {collapseSpaces} from '../augments/string';
 import {sampleFilesDir} from '../repo-paths';
 import {readPdf} from './read-pdf';
 

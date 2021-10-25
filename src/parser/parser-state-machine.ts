@@ -1,10 +1,10 @@
+import {IfEquals} from 'augment-vir';
 import {
     createStateMachine,
     handleErrorFunction,
     nextStateFunction,
     performStateActionFunction,
 } from 'fsm-vir';
-import {IfEquals} from '../augments/type';
 import {InitOutput, ParsedOutput} from './parsed-output';
 import {SharedParserFunctionInputs} from './parser-function';
 import {

@@ -1,6 +1,5 @@
-import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
-import {safeMatch} from '../../augments/regexp';
-import {sanitizeNumberString} from '../../augments/string';
+import {createDateFromSlashFormat, safeMatch, stripCommasFromNumberString} from 'augment-vir';
+import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
 import {createStatementParser} from '../statement-parser';
@@ -84,7 +83,7 @@ function processTransactionLine(
                 Number(transactionDay),
             ),
             postDate: dateWithinRange(undefined, endDate, Number(postMonth), Number(postDay)),
-            amount: Number(sanitizeNumberString(amount)),
+            amount: Number(stripCommasFromNumberString(amount)),
             description,
             referenceNumber,
             originalText: [line],
@@ -128,7 +127,7 @@ function performStateAction(
         const [, closingDateString] = safeMatch(line, closingDateRegExp);
         const [, accountNumberString] = safeMatch(line, extractAccountNumberRegExp);
         if (closingDateString) {
-            output.endDate = dateFromSlashFormat(closingDateString, parserOptions.yearPrefix);
+            output.endDate = createDateFromSlashFormat(closingDateString, parserOptions.yearPrefix);
         } else if (accountNumberString && !output.accountSuffix) {
             output.accountSuffix = accountNumberString;
         }

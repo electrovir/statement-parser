@@ -1,6 +1,10 @@
+import {
+    addRegExpFlags,
+    getAllIndexesOf,
+    replaceStringAtIndex,
+    splitIncludeSplit,
+} from 'augment-vir';
 import {writeFile} from 'fs-extra';
-import {addRegExpFlags} from '../augments/regexp';
-import {allIndexesOf, replaceStringAtIndex, splitIncludeSplit} from '../augments/string';
 import {parsers, ParserType} from '../parser/all-parsers';
 import {ParserKeyword} from '../parser/parser-options';
 import {temp_sanitizerRawTestFilePath, temp_sanitizerSanitizedTextFilePath} from '../repo-paths';
@@ -132,7 +136,7 @@ export function sanitizeStatementText(
 
     return text.map((line) => {
         const keywordIndexes: number[][] = phrasesToPreserve.map((keyword) => {
-            return allIndexesOf(line, keyword, false);
+            return getAllIndexesOf(line, keyword, false);
         });
         const containsKeywords = keywordIndexes.some((phraseIndexes) => phraseIndexes.length > 0);
 

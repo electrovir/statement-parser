@@ -1,4 +1,4 @@
-import {getEnumTypedValues} from '../augments/object';
+import {getEnumTypedValues} from 'augment-vir';
 import {
     ChaseCreditCardParsingOptions,
     chasePrimeVisaCreditCardParser,

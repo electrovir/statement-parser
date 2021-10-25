@@ -1,5 +1,5 @@
+import {safeMatch} from 'augment-vir';
 import {testGroup} from 'test-vir';
-import {safeMatch} from './augments/regexp';
 import {runBashCommand} from './bash-scripting';
 
 const packCommand = `npm pack --dry-run`;

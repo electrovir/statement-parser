@@ -1,4 +1,4 @@
-import {flatten2dArray} from '../augments/array';
+import {flatten2dArray} from 'augment-vir';
 import {readPdf} from '../pdf/read-pdf';
 import {ParsedOutput} from './parsed-output';
 import {

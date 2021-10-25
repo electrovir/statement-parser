@@ -1,7 +1,11 @@
-import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
-import {getEnumTypedValues} from '../../augments/object';
-import {safeMatch} from '../../augments/regexp';
-import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
+import {
+    collapseSpaces,
+    createDateFromSlashFormat,
+    getEnumTypedValues,
+    safeMatch,
+    stripCommasFromNumberString,
+} from 'augment-vir';
+import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
 import {createStatementParser} from '../statement-parser';
@@ -66,8 +70,8 @@ function performStateAction(
             if (!output.accountSuffix.match(/\d+/)) {
                 throw new Error(`Invalid account suffix: "${output.accountSuffix}"`);
             }
-            output.startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
-            output.endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
+            output.startDate = createDateFromSlashFormat(startDateString, parserOptions.yearPrefix);
+            output.endDate = createDateFromSlashFormat(endDateString, parserOptions.yearPrefix);
         } else {
             throw new Error(
                 `Start and end date were not found in line for "${State.StatementPeriod}" state: "${line}"`,
@@ -103,7 +107,7 @@ function performStateAction(
             );
             array.push({
                 date: date,
-                amount: Number(sanitizeNumberString(amountString)),
+                amount: Number(stripCommasFromNumberString(amountString)),
                 description: collapseSpaces(descriptionString).trim(),
                 from: undefined,
                 originalText: [line],

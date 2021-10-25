@@ -1,10 +1,14 @@
+import {
+    collapseSpaces,
+    createDateFromSlashFormat,
+    getEnumTypedValues,
+    Overwrite,
+    safeMatch,
+    stripCommasFromNumberString,
+} from 'augment-vir';
 import {parsePageItems} from 'pdf-text-reader';
 import {TextItem} from 'pdfjs-dist/types/src/display/api';
-import {dateFromSlashFormat, dateWithinRange} from '../../augments/date';
-import {getEnumTypedValues} from '../../augments/object';
-import {safeMatch} from '../../augments/regexp';
-import {collapseSpaces, sanitizeNumberString} from '../../augments/string';
-import {Overwrite} from '../../augments/type';
+import {dateWithinRange} from '../../augments/date';
 import {getPdfDocument} from '../../pdf/read-pdf';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -108,7 +112,7 @@ function parseAmount(input: string, negate: boolean): number {
     const [, amountMatch] = safeMatch(input, amountRegExp);
 
     if (amountMatch) {
-        const amount = Number(sanitizeNumberString(amountMatch));
+        const amount = Number(stripCommasFromNumberString(amountMatch));
         let multiplier = negate ? -1 : 1;
 
         if (input[0] === '-') {
@@ -174,8 +178,8 @@ function performStateAction(
         const [, startDateString, endDateString] = safeMatch(line, billingPeriodRegExp);
         const [, accountSuffixString] = safeMatch(line, accountNumberRegExp);
         if (startDateString && endDateString) {
-            output.startDate = dateFromSlashFormat(startDateString, parserOptions.yearPrefix);
-            output.endDate = dateFromSlashFormat(endDateString, parserOptions.yearPrefix);
+            output.startDate = createDateFromSlashFormat(startDateString, parserOptions.yearPrefix);
+            output.endDate = createDateFromSlashFormat(endDateString, parserOptions.yearPrefix);
         } else if (accountSuffixString) {
             output.accountSuffix = accountSuffixString;
         }
